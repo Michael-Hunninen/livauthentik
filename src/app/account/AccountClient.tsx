@@ -6,31 +6,21 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase, signIn, signUp } from '@/lib/supabase';
 
+// Simple loading spinner component
+function LoadingSpinner() {
+  return (
+    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-accent"></div>
+  );
+}
+
 export default function AccountClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  // Initialize state for client-side check
-  const [isClient, setIsClient] = useState(false);
-  
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-  
-  // Show loading state until we're on the client
-  if (!isClient) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
-      </div>
-    );
-  }
-  
+  const [isLoading, setIsLoading] = useState(true);
   const [isSignIn, setIsSignIn] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -42,7 +32,17 @@ export default function AccountClient() {
     } else if (tab === 'login') {
       setIsSignIn(true);
     }
+    setIsLoading(false);
   }, [searchParams]);
+
+  // Show loading state until component is ready
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
