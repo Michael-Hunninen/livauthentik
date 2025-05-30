@@ -6,6 +6,14 @@ import Stripe from 'stripe';
 
 // Stripe webhook handler
 export async function POST(request: Request) {
+  if (!stripe) {
+    console.error('Stripe is not initialized');
+    return NextResponse.json(
+      { error: 'Stripe is not properly configured' },
+      { status: 500 }
+    );
+  }
+
   const body = await request.text();
   const signature = headers().get('stripe-signature') as string;
 
@@ -131,6 +139,11 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 }
 
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
+  if (!stripe) {
+    console.error('Stripe is not initialized in handleSubscriptionCreated');
+    return;
+  }
+
   // Find the customer in our database
   const { data: customer } = await supabase
     .from('customers')
@@ -145,11 +158,26 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
   // Get the price and product details
   const priceId = subscription.items.data[0].price.id;
-  const price = await stripe.prices.retrieve(priceId, {
-    expand: ['product'],
-  });
+  let price: Stripe.Price;
+  let product: Stripe.Product | null = null;
   
-  const product = price.product as Stripe.Product;
+  try {
+    price = await stripe.prices.retrieve(priceId, {
+      expand: ['product'],
+    });
+    
+    if (typeof price.product === 'object' && price.product !== null) {
+      product = price.product as Stripe.Product;
+    }
+  } catch (error) {
+    console.error('Error retrieving price details:', error);
+    return;
+  }
+  
+  if (!product) {
+    console.error('No product found for price:', priceId);
+    return;
+  }
 
   // Create the subscription record
   await supabase.from('subscriptions').insert({
