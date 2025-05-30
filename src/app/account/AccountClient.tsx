@@ -4,12 +4,27 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase, signIn, signUp } from '@/lib/supabase';
 
 export default function AccountClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClientComponentClient();
+  
+  // Initialize state for client-side check
+  const [isClient, setIsClient] = useState(false);
+  
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
+  // Show loading state until we're on the client
+  if (!isClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
   
   const [isSignIn, setIsSignIn] = useState(true);
   const [email, setEmail] = useState('');
@@ -37,11 +52,8 @@ export default function AccountClient() {
 
     try {
       if (isSignIn) {
-        // Sign in with email and password
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        // Sign in with email and password using our custom function
+        const { data, error: signInError } = await signIn(email, password);
 
         if (signInError) {
           setError(signInError.message || 'Invalid login credentials');
@@ -52,22 +64,25 @@ export default function AccountClient() {
         setSuccess('Sign in successful! Redirecting...');
         router.push('/account/dashboard');
       } else {
-        // Handle registration
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: name,
-            },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
+        // Sign up with email and password using our custom function
+        const { data, error: signUpError } = await signUp(email, password);
 
         if (signUpError) {
           setError(signUpError.message || 'Error creating account');
           setIsLoading(false);
           return;
+        }
+        
+        // If we have a name, update the user's profile
+        if (name) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ full_name: name })
+            .eq('id', data.user?.id);
+            
+          if (profileError) {
+            console.error('Error updating profile:', profileError);
+          }
         }
 
         setSuccess('Account created successfully! Please check your email to confirm your account.');
