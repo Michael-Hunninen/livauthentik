@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase, signIn, signUp } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 
 // Simple loading spinner component
 function LoadingSpinner() {
@@ -52,8 +52,11 @@ export default function AccountClient() {
 
     try {
       if (isSignIn) {
-        // Sign in with email and password using our custom function
-        const { data, error: signInError } = await signIn(email, password);
+        // Sign in with email and password
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
         if (signInError) {
           setError(signInError.message || 'Invalid login credentials');
@@ -64,25 +67,27 @@ export default function AccountClient() {
         setSuccess('Sign in successful! Redirecting...');
         router.push('/account/dashboard');
       } else {
-        // Sign up with email and password using our custom function
-        const { data, error: signUpError } = await signUp(email, password);
+        // Sign up with email and password
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+            },
+          },
+        });
 
         if (signUpError) {
           setError(signUpError.message || 'Error creating account');
           setIsLoading(false);
           return;
         }
-        
-        // If we have a name, update the user's profile
-        if (name) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ full_name: name })
-            .eq('id', data.user?.id);
-            
-          if (profileError) {
-            console.error('Error updating profile:', profileError);
-          }
+
+        // Check if email confirmation is required
+        if (signUpData?.user?.identities?.length === 0) {
+          setSuccess('Check your email for the confirmation link.');
+          setIsSignIn(true); // Switch to sign in tab
         }
 
         setSuccess('Account created successfully! Please check your email to confirm your account.');
