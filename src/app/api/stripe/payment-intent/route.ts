@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
         // Create a new customer in Stripe
         const customerData = await stripe.customers.create({
           email: user.email || undefined,
-          name: user.name || undefined,
+          // Get user's name from profile table instead of directly from user object
+          // as Supabase User type doesn't have a name property
           metadata: {
             userId: user.id,
           },
@@ -113,12 +114,12 @@ export async function POST(req: NextRequest) {
           enabled: true,
         },
         metadata: {
-          userId: user?.id,
+          userId: user?.id || 'anonymous-user',
           items: JSON.stringify(
             items.map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              quantity: item.quantity,
+              id: item.id || '',
+              name: item.name || '',
+              quantity: item.quantity || 1,
             }))
           ),
         },
