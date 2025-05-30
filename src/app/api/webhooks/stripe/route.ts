@@ -1,8 +1,20 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
+
+// Initialize Supabase client with environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables');
+}
+
+const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 // Stripe webhook handler
 export async function POST(request: Request) {
@@ -10,6 +22,14 @@ export async function POST(request: Request) {
     console.error('Stripe is not initialized');
     return NextResponse.json(
       { error: 'Stripe is not properly configured' },
+      { status: 500 }
+    );
+  }
+
+  if (!supabase) {
+    console.error('Supabase is not initialized');
+    return NextResponse.json(
+      { error: 'Supabase is not properly configured' },
       { status: 500 }
     );
   }

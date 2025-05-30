@@ -1,9 +1,35 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+let supabase: SupabaseClient;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Only initialize Supabase if we have the required environment variables
+if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+} else {
+  // Create a mock client with no-op methods for build time
+  console.warn('Supabase environment variables are not set. Using mock client.');
+  supabase = {
+    auth: {
+      signUp: () => Promise.resolve({ data: null, error: new Error('Supabase not initialized') }),
+      signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Supabase not initialized') }),
+      signOut: () => Promise.resolve({ error: null }),
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      get user() { return null; },
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+    },
+    from: () => ({
+      select: () => ({ data: null, error: new Error('Supabase not initialized') }),
+      insert: () => ({ data: null, error: new Error('Supabase not initialized') }),
+      update: () => ({ data: null, error: new Error('Supabase not initialized') }),
+      delete: () => ({ data: null, error: new Error('Supabase not initialized') }),
+    }),
+  } as unknown as SupabaseClient;
+}
+
+export { supabase };
 
 // Authentication helpers
 export const signUp = async (email: string, password: string) => {
