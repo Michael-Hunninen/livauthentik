@@ -281,11 +281,13 @@ export default function ProductDetailPage() {
         ? (isSubscription && currentVariant.subscriptionPrice ? currentVariant.subscriptionPrice : currentVariant.price)
         : (isSubscription && product.subscriptionPrice ? product.subscriptionPrice : product.price),
       quantity,
-      image: product.image,
-      isSubscription
+      imageSrc: product.image,
+      imageAlt: product.name,
+      description: product.description,
+      subscriptionPrice: currentVariant ? currentVariant.subscriptionPrice : product.subscriptionPrice
     };
     
-    addToCart(item);
+    addToCart(item, quantity, isSubscription);
     setIsAddedToCart(true);
     
     setTimeout(() => {
