@@ -1,4 +1,4 @@
-import { supabase } from '../supabase';
+import { supabase } from './client';
 import { redirect } from 'next/navigation';
 
 // Get the current user

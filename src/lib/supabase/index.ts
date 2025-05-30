@@ -1,8 +1,8 @@
-// Client-side exports
+// Export the main Supabase client
 export { supabase } from './client';
 
-// Server-side exports
-export { supabase as serverSupabase } from './server';
+// For backward compatibility, export the same client as serverSupabase
+export { supabase as serverSupabase } from './client';
 
-// Types
-export * from './types';
+// Export types if needed
+export type { User, Session } from '@supabase/supabase-js';
