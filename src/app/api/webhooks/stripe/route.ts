@@ -145,7 +145,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
   // Get the price and product details
   const priceId = subscription.items.data[0].price.id;
-  const { data: price } = await stripe.prices.retrieve(priceId, {
+  const price = await stripe.prices.retrieve(priceId, {
     expand: ['product'],
   });
   
@@ -163,7 +163,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     currency: price.currency,
     interval: price.type === 'recurring' ? price.recurring?.interval : null,
     status: subscription.status,
-    current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+    current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
     cancel_at_period_end: subscription.cancel_at_period_end,
     created_at: new Date().toISOString(),
   });
@@ -190,7 +190,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     .from('subscriptions')
     .update({
       status: subscription.status,
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
       cancel_at_period_end: subscription.cancel_at_period_end,
       updated_at: new Date().toISOString(),
     })
@@ -240,13 +240,14 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 }
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
-  if (!invoice.subscription) return; // Only handle subscription invoices
+  const subscriptionId = typeof (invoice as any).subscription === 'string' ? (invoice as any).subscription : (invoice as any).subscription?.id;
+  if (!subscriptionId) return; // Only handle subscription invoices
 
   // Find the subscription in our database
   const { data: subscription } = await supabase
     .from('subscriptions')
     .select('id, user_id, product_name')
-    .eq('stripe_subscription_id', invoice.subscription as string)
+    .eq('stripe_subscription_id', subscriptionId)
     .single();
 
   if (!subscription) {
@@ -272,13 +273,14 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
-  if (!invoice.subscription) return; // Only handle subscription invoices
+  const subscriptionId = typeof (invoice as any).subscription === 'string' ? (invoice as any).subscription : (invoice as any).subscription?.id;
+  if (!subscriptionId) return; // Only handle subscription invoices
 
   // Find the subscription in our database
   const { data: subscription } = await supabase
     .from('subscriptions')
     .select('id, user_id')
-    .eq('stripe_subscription_id', invoice.subscription as string)
+    .eq('stripe_subscription_id', subscriptionId)
     .single();
 
   if (!subscription) {
