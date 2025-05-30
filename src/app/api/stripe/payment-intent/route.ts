@@ -6,6 +6,13 @@ import { stripe } from '@/lib/stripe';
 
 export async function POST(req: NextRequest) {
   try {
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe is not properly configured' },
+        { status: 500 }
+      );
+    }
+
     const body = await req.json();
     const { items, customerId, isSubscription, paymentType } = body;
 
