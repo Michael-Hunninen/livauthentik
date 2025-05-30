@@ -1,33 +1,17 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-let supabase: SupabaseClient;
+// Hardcoded Supabase configuration
+const SUPABASE_URL = 'https://adkrrjokgpufehpxinsr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFka3Jyam9rZ3B1ZmVocHhpbnNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg2NDU2NzcsImV4cCI6MjA2NDIyMTY3N30.9orYHKtsT-YsDRGrIJrj7D5hg825dupR7QwcAYf_1hk';
 
-// Only initialize Supabase if we have the required environment variables
-if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
-} else {
-  // Create a mock client with no-op methods for build time
-  console.warn('Supabase environment variables are not set. Using mock client.');
-  supabase = {
-    auth: {
-      signUp: () => Promise.resolve({ data: null, error: new Error('Supabase not initialized') }),
-      signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Supabase not initialized') }),
-      signOut: () => Promise.resolve({ error: null }),
-      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-      get user() { return null; },
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-    },
-    from: () => ({
-      select: () => ({ data: null, error: new Error('Supabase not initialized') }),
-      insert: () => ({ data: null, error: new Error('Supabase not initialized') }),
-      update: () => ({ data: null, error: new Error('Supabase not initialized') }),
-      delete: () => ({ data: null, error: new Error('Supabase not initialized') }),
-    }),
-  } as unknown as SupabaseClient;
-}
+// Initialize Supabase client
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 export { supabase };
 
