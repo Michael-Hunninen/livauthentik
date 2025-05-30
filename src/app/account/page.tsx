@@ -3,10 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export default function AccountPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const supabase = createClientComponentClient();
+  
   const [isSignIn, setIsSignIn] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,27 +35,51 @@ export default function AccountPage() {
     setError('');
     setSuccess('');
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
       if (isSignIn) {
-        // In a real app, you would call your authentication API here
-        if (email === 'test@example.com' && password === 'password') {
-          setSuccess('Sign in successful! Redirecting...');
-          // Redirect to dashboard after a short delay to show the success message
-          setTimeout(() => {
-            window.location.href = '/account/dashboard';
-          }, 1000);
-        } else {
-          setError('Invalid email or password. Try test@example.com / password for demo.');
+        // Sign in with email and password
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          setError(signInError.message || 'Invalid login credentials');
           setIsLoading(false);
+          return;
         }
+
+        setSuccess('Sign in successful! Redirecting...');
+        router.push('/account/dashboard');
       } else {
         // Handle registration
-        setSuccess('Account created successfully! You can now sign in.');
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+            },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+
+        if (signUpError) {
+          setError(signUpError.message || 'Error creating account');
+          setIsLoading(false);
+          return;
+        }
+
+
+        setSuccess('Account created successfully! Please check your email to confirm your account.');
         setIsSignIn(true);
-        setIsLoading(false);
       }
-    }, 1000);
+    } catch (error) {
+      console.error('Authentication error:', error);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Animation variants
