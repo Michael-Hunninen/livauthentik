@@ -1,9 +1,9 @@
 'use client';
 
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 
 // Dynamically import the client component with SSR disabled
-const AccountClient = dynamic(
+const AccountClient = dynamicImport(
   () => import('./AccountClient'),
   { 
     ssr: false,
