@@ -46,6 +46,12 @@ export default function AccountClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!supabase) {
+      setError('Authentication service is not available. Please refresh the page.');
+      return;
+    }
+    
     setIsLoading(true);
     setError('');
     setSuccess('');
