@@ -49,15 +49,17 @@ export default function Header() {
     };
   }, [dropdownRef]);
 
-  // Check if user is logged in using localStorage and update on path changes
+  // Check if user is logged in and update on path changes
   useEffect(() => {
-    const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(loggedIn);
+    // This code runs only on the client side
+    const loggedIn = typeof window !== 'undefined' ? localStorage.getItem('isLoggedIn') === 'true' : false;
     
     // Auto-login if accessing dashboard
-    if (pathname?.includes('/account/dashboard')) {
+    if (typeof window !== 'undefined' && pathname?.includes('/account/dashboard')) {
       localStorage.setItem('isLoggedIn', 'true');
       setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(loggedIn);
     }
   }, [pathname]);
 
