@@ -18,18 +18,28 @@ export async function GET() {
     // Create a Supabase client with the provided token
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      // Use the anon key for server-side operations
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false
+        },
         global: {
           headers: {
-            Authorization: `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
           }
-        },
-        auth: {
-          persistSession: false
         }
       }
     );
+    
+    // Set the auth header for this request using the session
+    await supabase.auth.setSession({
+      access_token: token,
+      refresh_token: ''
+    });
     
     // Verify the token and get the user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -132,11 +142,32 @@ export async function GET() {
     return NextResponse.json(response);
 
   } catch (error: any) {
-    console.error('Error in rewards API:', error);
+    console.error('Error in rewards API:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      // Include environment info for debugging (don't include sensitive data)
+      env: {
+        nodeEnv: process.env.NODE_ENV,
+        hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      }
+    });
+    
+    // Return detailed error in development, generic in production
+    const isDev = process.env.NODE_ENV === 'development';
+    const errorDetails = isDev 
+      ? {
+          error: error.message || 'Unknown error',
+          stack: error.stack,
+          type: error.name
+        }
+      : { error: 'Internal server error' };
+      
     return NextResponse.json(
       { 
-        error: 'Internal server error',
-        details: error?.message || 'An unknown error occurred'
+        success: false,
+        ...errorDetails
       },
       { status: 500 }
     );

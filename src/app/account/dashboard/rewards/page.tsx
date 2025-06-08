@@ -255,8 +255,23 @@ const RewardsPage = () => {
         console.log('Response status:', response.status);
         
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error('Error response:', errorData);
+          let errorData: any = {};
+          try {
+            errorData = await response.json();
+            console.error('Error response:', errorData);
+          } catch (parseError) {
+            console.error('Failed to parse error response:', parseError);
+            errorData = { message: 'Failed to parse error response' };
+          }
+          
+          // Log detailed error information
+          console.error('Rewards API error:', {
+            status: response.status,
+            statusText: response.statusText,
+            url: response.url,
+            error: errorData,
+            headers: Object.fromEntries(response.headers.entries())
+          });
           
           // If unauthorized, redirect to login
           if (response.status === 401) {
@@ -267,14 +282,16 @@ const RewardsPage = () => {
           
           // For server errors (500), log but don't redirect - use mock data instead
           if (response.status >= 500) {
-            console.error(`Server error (${response.status}) - falling back to mock data`);
+            const errorMessage = errorData.error || 'Internal server error';
+            console.error(`Server error (${response.status}) - ${errorMessage} - falling back to mock data`);
             // Use mock data instead of throwing an error
             setRewardsData(generateMockRewardsData());
+            setError(`Server error: ${errorMessage}. Showing mock data.`);
             return;
           }
           
           throw new Error(
-            errorData.message || 
+            errorData.error || errorData.message || 
             `Failed to fetch rewards data: ${response.status} ${response.statusText}`
           );
         }
