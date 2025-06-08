@@ -10,7 +10,8 @@ import CartButton from '../cart/CartButton';
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isDashboardView, setIsDashboardView] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -33,11 +34,17 @@ export default function Header() {
     setIsDashboardView(pathname?.includes('/account/dashboard') || false);
   }, [pathname]);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
+        setIsProfileDropdownOpen(false);
+        // Only close shop dropdown if not hovering over it
+        const target = event.target as HTMLElement;
+        const isHoveringShop = target.closest('.shop-dropdown-container');
+        if (!isHoveringShop) {
+          setIsShopDropdownOpen(false);
+        }
       }
     }
 
@@ -65,7 +72,8 @@ export default function Header() {
 
   // Handle navigation to account pages
   const handleNavigation = (path: string) => {
-    setIsDropdownOpen(false);
+    setIsProfileDropdownOpen(false);
+    setIsShopDropdownOpen(false);
     setIsMobileMenuOpen(false);
     router.push(path);
   };
@@ -73,7 +81,8 @@ export default function Header() {
   // Handle scroll effect for header
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      // Use exactly 5px threshold for instant synchronization with other components
+      setIsScrolled(window.scrollY > 5);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -84,20 +93,81 @@ export default function Header() {
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
+  // Determine if we're on pages that need a transparent header (home, shop, products, programs, about, rewards)
+  const isTransparentHeaderPage = 
+    pathname === '/' || 
+    pathname === '/shop' || 
+    pathname === '/about' ||
+    pathname === '/rewards' ||
+    pathname.startsWith('/products') || 
+    pathname.startsWith('/programs');
+
   return (
     <header 
-      className={`fixed top-0 inset-x-0 z-40 transition-all duration-500 ${
-        isScrolled ? 'bg-background/90 backdrop-blur-xl shadow-md border-b border-border/10' : 'bg-transparent'
+      className={`fixed top-0 inset-x-0 z-40 transition-all duration-200 border-b ${
+        isScrolled || !isTransparentHeaderPage 
+          ? 'bg-background/90 backdrop-blur-xl shadow-md border-border/10 text-foreground' 
+          : 'bg-transparent border-transparent text-[#fffff0]'
       }`}
     >
       <nav className="container mx-auto px-6 sm:px-8 lg:px-12">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center group">
-              <span className="text-2xl font-serif font-bold tracking-tight text-foreground group-hover:text-accent transition-colors duration-300">
-                Liv<span className="text-accent group-hover:text-foreground transition-colors duration-300">Authentik</span>
-              </span>
+          <div className="flex-shrink-0 flex items-center h-20">
+            <Link href="/" className="flex items-center group h-full">
+              <div className="relative w-48 h-12 flex items-center">
+                <div className="relative w-full h-full">
+                  <div className="relative w-full h-full group/logo">
+                    {/* White logo on home page (not scrolled) */}
+                    <div className={`absolute inset-0 transition-opacity duration-200 ${!isScrolled && isTransparentHeaderPage ? 'opacity-100' : 'opacity-0'}`}>
+                      <Image 
+                        src="https://storage.googleapis.com/msgsndr/5aAlQ1qN7UqHLdGzV8gr/media/ede1039b-2398-4da9-8c51-558cc788ca26.svg+xml"
+                        alt="LivAuthentik Logo"
+                        width={192}
+                        height={48}
+                        className="w-full h-full object-contain filter invert brightness-0"
+                        priority
+                        unoptimized
+                      />
+                    </div>
+                    
+                    {/* Black logo (scrolled or not home page) with foreground color - hides on hover */}
+                    <div className={`absolute inset-0 transition-opacity duration-200 ${isScrolled || !isTransparentHeaderPage ? 'opacity-100 group-hover/logo:opacity-0' : 'opacity-0'}`}>
+                      <div 
+                        className="w-full h-full text-foreground" 
+                        style={{
+                          WebkitMaskImage: 'url(https://storage.googleapis.com/msgsndr/5aAlQ1qN7UqHLdGzV8gr/media/ede1039b-2398-4da9-8c51-558cc788ca26.svg+xml)',
+                          maskImage: 'url(https://storage.googleapis.com/msgsndr/5aAlQ1qN7UqHLdGzV8gr/media/ede1039b-2398-4da9-8c51-558cc788ca26.svg+xml)',
+                          WebkitMaskSize: 'contain',
+                          maskSize: 'contain',
+                          WebkitMaskRepeat: 'no-repeat',
+                          maskRepeat: 'no-repeat',
+                          WebkitMaskPosition: 'center',
+                          maskPosition: 'center',
+                          backgroundColor: 'currentColor'
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Accent color logo on hover - uses exact same text-accent class as navigation */}
+                    <div 
+                      className="absolute inset-0 opacity-0 group-hover/logo:opacity-100 transition-opacity duration-200 z-10 text-accent" 
+                      style={{
+                        WebkitMaskImage: 'url(https://storage.googleapis.com/msgsndr/5aAlQ1qN7UqHLdGzV8gr/media/ede1039b-2398-4da9-8c51-558cc788ca26.svg+xml)',
+                        maskImage: 'url(https://storage.googleapis.com/msgsndr/5aAlQ1qN7UqHLdGzV8gr/media/ede1039b-2398-4da9-8c51-558cc788ca26.svg+xml)',
+                        WebkitMaskSize: 'contain',
+                        maskSize: 'contain',
+                        WebkitMaskRepeat: 'no-repeat',
+                        maskRepeat: 'no-repeat',
+                        WebkitMaskPosition: 'center',
+                        maskPosition: 'center',
+                        backgroundColor: 'currentColor' // Uses the text-accent color from the className
+                      }}
+                    />
+                    
+                  </div>
+                </div>
+              </div>
             </Link>
           </div>
 
@@ -110,25 +180,25 @@ export default function Header() {
                 <>
                   <Link 
                     href="/account/dashboard" 
-                    className={`text-foreground hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-300 border-b-2 ${pathname === '/account/dashboard' ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
+                    className={`hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-200 border-b-2 ${pathname === '/account/dashboard' ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
                   >
                     Dashboard
                   </Link>
                   <Link 
                     href="/account/dashboard/orders" 
-                    className={`text-foreground hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-300 border-b-2 ${pathname?.startsWith('/account/dashboard/orders') ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
+                    className={`hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-200 border-b-2 ${pathname?.startsWith('/account/dashboard/orders') ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
                   >
                     Orders
                   </Link>
                   <Link 
                     href="/account/dashboard/rewards" 
-                    className={`text-foreground hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-300 border-b-2 ${pathname?.startsWith('/account/dashboard/rewards') ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
+                    className={`hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-200 border-b-2 ${pathname?.startsWith('/account/dashboard/rewards') ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
                   >
                     Rewards
                   </Link>
                   <Link 
                     href="/account/dashboard/devotion" 
-                    className={`text-foreground hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-300 border-b-2 ${pathname?.startsWith('/account/dashboard/devotion') ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
+                    className={`hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-200 border-b-2 ${pathname?.startsWith('/account/dashboard/devotion') ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
                   >
                     Devotion
                   </Link>
@@ -136,39 +206,57 @@ export default function Header() {
               ) : (
                 // Shop Navigation
                 <>
-                  <div className="relative group">
-                    <button 
-                      className={`flex items-center text-foreground hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-300 border-b-2 ${pathname === '/products' || pathname?.startsWith('/product/') || pathname === '/programs' ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
+                  <Link 
+                    href="/" 
+                    className={`${isScrolled || !isTransparentHeaderPage ? 'text-foreground' : 'text-[#fffff0]'} hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-200 border-b-2 ${pathname === '/' ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Home
+                  </Link>
+                  <div 
+                    className="relative group"
+                    onMouseEnter={() => setIsShopDropdownOpen(true)}
+                    onMouseLeave={() => setIsShopDropdownOpen(false)}
+                  >
+                    <div className="flex items-center">
+                      <div 
+                        className={`flex items-center cursor-pointer hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-200 border-b-2 ${pathname === '/shop' || pathname === '/products' || pathname?.startsWith('/product/') || pathname === '/programs' ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
+                        onClick={() => {
+                          router.push('/shop');
+                          setIsShopDropdownOpen(false);
+                        }}
+                      >
+                        Shop
+                      </div>
+                    </div>
+                    <div 
+                      className={`absolute left-1/2 transform -translate-x-1/2 mt-1 w-48 rounded-md shadow-lg ${isScrolled || !isTransparentHeaderPage ? 'bg-background/95 text-foreground' : 'bg-[#22201E]/95 text-[#fffff0]'} backdrop-blur-lg border border-border/20 ring-1 ring-black ring-opacity-5 focus:outline-none transition-all duration-200 z-50 ${isShopDropdownOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+                      onMouseEnter={() => setIsShopDropdownOpen(true)}
+                      onMouseLeave={() => setIsShopDropdownOpen(false)}
                     >
-                      Shop
-                      <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                    <div className="absolute left-1/2 transform -translate-x-1/2 mt-1 w-48 rounded-md shadow-lg bg-background/95 backdrop-blur-lg border border-border/20 ring-1 ring-black ring-opacity-5 focus:outline-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                      <div className="py-1">
+                      <div className="py-1" onClick={(e) => e.stopPropagation()}>
                         <Link
                           href="/products"
-                          className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-accent/5 transition-colors duration-150"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleNavigation('/products');
+                          className={`flex items-center px-4 py-2 text-sm ${isScrolled || !isTransparentHeaderPage ? 'hover:bg-accent/5' : 'hover:bg-white/10'} transition-all duration-200`}
+                          onClick={() => {
+                            setIsShopDropdownOpen(false);
+                            setIsMobileMenuOpen(false);
                           }}
                         >
-                          <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className={`mr-2 h-4 w-4 ${isScrolled || !isTransparentHeaderPage ? 'text-accent' : 'text-[#caac8e]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                           </svg>
                           Products
                         </Link>
                         <Link
                           href="/programs"
-                          className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-accent/5 transition-colors duration-150"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleNavigation('/programs');
+                          className={`flex items-center px-4 py-2 text-sm ${isScrolled || !isTransparentHeaderPage ? 'hover:bg-accent/5' : 'hover:bg-white/10'} transition-all duration-200`}
+                          onClick={() => {
+                            setIsShopDropdownOpen(false);
+                            setIsMobileMenuOpen(false);
                           }}
                         >
-                          <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className={`mr-2 h-4 w-4 ${isScrolled || !isTransparentHeaderPage ? 'text-accent' : 'text-[#caac8e]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                           </svg>
                           Programs
@@ -179,21 +267,21 @@ export default function Header() {
                   
                   <Link 
                     href="/about" 
-                    className={`text-foreground hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-300 border-b-2 ${pathname === '/about' ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
+                    className={`${isScrolled || !isTransparentHeaderPage ? 'text-foreground' : 'text-[#fffff0]'} hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-200 border-b-2 ${pathname === '/about' ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
                   >
                     About
                   </Link>
                   
                   <Link 
                     href="/rewards" 
-                    className={`text-foreground hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-300 border-b-2 ${pathname === '/rewards' ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
+                    className={`${isScrolled || !isTransparentHeaderPage ? 'text-foreground' : 'text-[#fffff0]'} hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-200 border-b-2 ${pathname === '/rewards' ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
                   >
                     Rewards
                   </Link>
                   
                   <Link 
                     href="/blog" 
-                    className={`text-foreground hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-300 border-b-2 ${pathname === '/blog' ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
+                    className={`${isScrolled || !isTransparentHeaderPage ? 'text-foreground' : 'text-[#fffff0]'} hover:text-accent py-2 text-sm uppercase tracking-widest font-medium transition-all duration-200 border-b-2 ${pathname === '/blog' ? 'border-accent text-accent' : 'border-transparent hover:border-accent'}`}
                   >
                     Blog
                   </Link>
@@ -206,46 +294,35 @@ export default function Header() {
 
           {/* Right Section with Cart and Account */}
           <div className="flex items-center space-x-4">
-            {isLoggedIn && (
-              <button
-                onClick={toggleView}
-                className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-accent/10 text-foreground hover:text-accent transition-colors duration-200"
-                title={isDashboardView ? 'Back to Store' : 'Go to Dashboard'}
-              >
-                {isDashboardView ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                )}
-              </button>
-            )}
             {isLoggedIn ? (
               <div className="relative">
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsDropdownOpen(!isDropdownOpen);
+                    setIsProfileDropdownOpen(!isProfileDropdownOpen);
+                    setIsShopDropdownOpen(false);
                   }}
-                  className="flex items-center text-foreground hover:text-accent transition-colors duration-200"
+                  className="flex items-center hover:text-accent transition-all duration-200"
                   id="account-dropdown"
                   aria-label="Account menu"
-                  aria-expanded={isDropdownOpen}
+                  aria-expanded={isProfileDropdownOpen}
                   aria-haspopup="true"
                   aria-controls="account-dropdown-menu"
                 >
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-accent/10 transition-colors">
-                    <svg className="h-5 w-5 text-foreground hover:text-accent transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-accent/10 transition-all duration-200">
+                    <svg 
+                      className={`h-5 w-5 transition-all duration-200 ${isProfileDropdownOpen ? 'text-accent' : isScrolled || !isTransparentHeaderPage ? 'text-foreground' : 'text-[#fffff0] hover:text-accent'}`} 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                 </button>
                 
                 <AnimatePresence>
-                  {isDropdownOpen && (
+                  {isProfileDropdownOpen && (
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -266,7 +343,7 @@ export default function Header() {
                     <div className="py-1">
                       <Link 
                         href="/account/dashboard/settings" 
-                        className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-accent/5 transition-colors duration-150"
+                        className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-accent/5 transition-all duration-200"
                         onClick={(e) => {
                           e.preventDefault();
                           handleNavigation('/account/dashboard/settings');
@@ -278,13 +355,26 @@ export default function Header() {
                         </svg>
                         Settings
                       </Link>
+                      <button 
+                        onClick={toggleView}
+                        className="w-full text-left flex items-center px-4 py-2 text-sm text-foreground hover:bg-accent/5 transition-all duration-200"
+                      >
+                        <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          {isDashboardView ? (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                          ) : (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                          )}
+                        </svg>
+                        {isDashboardView ? 'Back to Store' : 'Go to Dashboard'}
+                      </button>
                     </div>
                     <div className="py-1 border-t border-border/10">
                       <button 
                         onClick={() => {
                           localStorage.removeItem('isLoggedIn');
                           setIsLoggedIn(false);
-                          setIsDropdownOpen(false);
+                          setIsProfileDropdownOpen(false);
                           // Use window.location.href for full page reload to reset app state
                           window.location.href = '/';
                         }}
@@ -303,7 +393,7 @@ export default function Header() {
             ) : (
               <Link 
                 href="/account" 
-                className="hidden md:flex items-center justify-center w-8 h-8 text-foreground hover:text-accent transition-colors duration-300 rounded-full hover:bg-accent/10"
+                className={`hidden md:flex items-center justify-center w-8 h-8 transition-colors duration-300 rounded-full hover:bg-accent/10 ${isScrolled || !isTransparentHeaderPage ? 'text-foreground hover:text-accent' : 'text-[#fffff0] hover:text-accent'}`}
                 aria-label="Sign In"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -392,6 +482,20 @@ export default function Header() {
               {/* Navigation Links */}
               <div className="mb-4 pb-3 border-b border-border/10">
                 <h3 className="px-3 text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Navigation</h3>
+                
+                {/* Home Link */}
+                <Link 
+                  href="/" 
+                  className="text-foreground hover:text-accent flex items-center justify-between px-3 py-3 text-base font-medium transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <div className="flex items-center">
+                    <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    Home
+                  </div>
+                </Link>
                 
                 {/* Shop Dropdown */}
                 <div className="mb-1">

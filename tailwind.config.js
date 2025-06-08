@@ -7,6 +7,10 @@ module.exports = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+    fontFamily: {
+      sans: ['Arial', 'sans-serif'],
+      serif: ['Cinzel', 'serif'],
+    },
     container: {
       center: true,
       padding: "2rem",
@@ -16,6 +20,7 @@ module.exports = {
     },
     extend: {
       colors: {
+        beige: '#caac8e',
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

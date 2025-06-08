@@ -4,7 +4,10 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ['images.unsplash.com'], // Add any image domains you need
+    domains: [
+      'images.unsplash.com',
+      'storage.googleapis.com'
+    ],
   },
 };
 

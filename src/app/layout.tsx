@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Cinzel } from "next/font/google";
 import "./globals.css";
 
 // Cart & Layout Components
@@ -8,20 +8,19 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import CartSidebar from "@/components/cart/CartSidebar";
 import { Toaster } from "@/components/ui/toaster";
+import SmoothScrollProvider from "@/components/SmoothScrollProvider";
+import { useEffect } from 'react';
 
-const inter = Inter({
+// Load Cinzel font for headings
+const cinzel = Cinzel({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-cinzel",
   display: "swap",
-  adjustFontFallback: false,
+  weight: ['400', '500', '600', '700'],
+  style: ['normal'],
+  adjustFontFallback: true,
 });
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
-  adjustFontFallback: false,
-});
 
 export const metadata: Metadata = {
   title: "LivAuthentik | Premium Wellness & Performance",
@@ -42,20 +41,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
+// Add loading state type
+type RootLayoutProps = {
   children: React.ReactNode;
-}>) {
+};
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
-      <body className="min-h-screen bg-background font-sans antialiased">
+    <html lang="en" className={`${cinzel.variable} font-sans`}>
+      <body className="min-h-screen bg-background antialiased relative">
         <CartProvider>
-          <Header />
-          <main className="pt-16">{children}</main>
-          <Footer />
-          <CartSidebar />
-          <Toaster />
+          <SmoothScrollProvider>
+            <Header />
+            <main className="min-h-[calc(100vh-4rem)]">
+              {children}
+            </main>
+            <Footer />
+            <CartSidebar />
+            <Toaster />
+          </SmoothScrollProvider>
         </CartProvider>
       </body>
     </html>

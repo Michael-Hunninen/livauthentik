@@ -50,7 +50,7 @@ export default function CartSidebar() {
     return (
       <div className="flex items-center border border-border/40 rounded-full w-24 h-8 overflow-hidden bg-background shadow-sm">
         <button 
-          onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+          onClick={() => updateQuantity(item.cartItemId || `${item.id}-${item.isSubscription ? 'sub' : 'one'}`, Math.max(1, item.quantity - 1))}
           className="w-8 h-full flex items-center justify-center text-foreground hover:text-accent transition-colors"
           aria-label="Decrease quantity"
         >
@@ -60,7 +60,7 @@ export default function CartSidebar() {
         </button>
         <span className="flex-1 text-center text-sm font-medium">{item.quantity}</span>
         <button 
-          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+          onClick={() => updateQuantity(item.cartItemId || `${item.id}-${item.isSubscription ? 'sub' : 'one'}`, item.quantity + 1)}
           className="w-8 h-full flex items-center justify-center text-foreground hover:text-accent transition-colors"
           aria-label="Increase quantity"
         >
@@ -126,7 +126,7 @@ export default function CartSidebar() {
                 <ul className="space-y-6">
                   {cartItems.map(item => (
                     <li 
-                      key={`${item.id}-${item.isSubscription ? 'sub' : 'one'}`} 
+                      key={item.cartItemId || `${item.id}-${item.isSubscription ? 'sub' : 'one'}`} 
                       className="border-b border-border/20 pb-6"
                     >
                       <div className="flex gap-5">
@@ -155,7 +155,7 @@ export default function CartSidebar() {
                               <p className="text-sm text-muted mt-1">{item.description}</p>
                             </div>
                             <button 
-                              onClick={() => removeFromCart(item.id)}
+                              onClick={() => removeFromCart(item.cartItemId || `${item.id}-${item.isSubscription ? 'sub' : 'one'}`)}
                               className="text-muted hover:text-accent transition-colors p-1 hover:bg-muted/20 rounded-full"
                               aria-label="Remove item"
                             >
@@ -180,7 +180,7 @@ export default function CartSidebar() {
                           {/* Subscription Toggle */}
                           {item.subscriptionPrice && item.subscriptionPrice !== 'Billed monthly' && (
                             <button 
-                              onClick={() => toggleSubscription(item.id)}
+                              onClick={() => toggleSubscription(item.cartItemId || `${item.id}-${item.isSubscription ? 'sub' : 'one'}`)}
                               className={`mt-3 text-xs inline-flex items-center px-3 py-1.5 rounded-full transition-all duration-300 ${item.isSubscription 
                                 ? 'bg-accent/10 text-accent' 
                                 : 'bg-muted/10 text-muted hover:bg-accent/5 hover:text-accent'}`}

@@ -1,333 +1,174 @@
 'use client';
 
-import React, { useState, ReactNode, isValidElement, Children, forwardRef, ForwardedRef } from 'react';
+import React, { useState, forwardRef, createContext, useContext, useMemo } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { FiAward, FiClock, FiHeadphones, FiCoffee, FiCalendar, FiBook, FiPlay, FiArrowRight, FiCheckCircle } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiAward, FiHeadphones, FiCoffee, FiArrowRight } from 'react-icons/fi';
 
-// Simple UI component implementations
-type ButtonElement = HTMLButtonElement;
-
-type ButtonProps = {
-  children: ReactNode;
-  className?: string;
-  asChild?: boolean;
+// UI Components
+const Button = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'sm' | 'default' | 'lg';
-} & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'asChild'>;
-
-const Button = forwardRef<ButtonElement, ButtonProps>(({ 
+  asChild?: boolean;
+}>(({ 
   children, 
   className = '', 
-  asChild = false,
   variant = 'default',
   size = 'default',
+  asChild = false,
   ...props 
-}: ButtonProps, ref: ForwardedRef<ButtonElement>) => {
+}, ref) => {
   const Comp = asChild ? 'div' : 'button';
   const variants = {
     default: 'bg-accent hover:bg-accent/90 text-white',
     outline: 'bg-transparent border-2 border-accent text-accent hover:bg-accent/10',
-    ghost: 'bg-transparent hover:bg-accent/10 text-accent',
+    ghost: 'bg-transparent hover:bg-muted/50 text-foreground',
   };
   
   const sizes = {
-    sm: 'py-1.5 px-3 text-xs',
-    default: 'py-2.5 px-5 text-sm',
-    lg: 'py-3 px-6 text-base',
+    sm: 'h-9 px-3 rounded-md text-xs',
+    default: 'h-10 px-4 py-2 rounded-md text-sm',
+    lg: 'h-11 px-8 rounded-md text-base',
   };
   
   const buttonProps = {
-    className: `font-medium transition-all duration-200 ease-in-out rounded-lg flex items-center justify-center gap-2 ${
+    className: `inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background ${
       variants[variant as keyof typeof variants] || variants.default
     } ${sizes[size as keyof typeof sizes] || sizes.default} ${className}`,
-    ...(asChild ? {} : props),
     ref,
+    ...(asChild ? {} : { type: 'button' }),
+    ...props,
   };
   
-  return React.createElement(
-    Comp,
-    {
-      ...buttonProps,
-      ...(asChild ? {} : { type: 'button' } as const)
-    },
-    children
-  );
+  return React.createElement(Comp, buttonProps, children);
 });
 
 Button.displayName = 'Button';
 
-// Simple card components
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: ReactNode;
-  className?: string;
-  hoverable?: boolean;
-}
-
-const Card = ({ 
-  children, 
-  className = '', 
-  hoverable = false, 
-  ...props 
-}: CardProps) => (
-  <div 
-    className={`relative bg-card/50 backdrop-blur-sm border border-border/30 rounded-xl overflow-hidden transition-all duration-300 ease-in-out ${
-      hoverable ? 'hover:shadow-lg hover:border-accent/50 hover:-translate-y-1' : ''
-    } ${className}`} 
-    {...props}
-  >
-    <div className="absolute inset-0 bg-gradient-to-br from-transparent to-card/30 pointer-events-none" />
-    <div className="relative z-10 h-full flex flex-col">
-      {children}
-    </div>
-  </div>
-);
-interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: ReactNode;
-  className?: string;
-}
-
-const CardHeader = ({ children, className = '', ...props }: CardHeaderProps) => (
-  <div className={`p-6 pb-2 ${className}`} {...props}>
-    <div className="space-y-1">
-      {children}
-    </div>
-  </div>
-);
-
-interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: ReactNode;
-  className?: string;
-}
-
-const CardContent = ({ children, className = '', ...props }: CardContentProps) => (
-  <div className={`px-6 py-2 ${className}`} {...props}>
-    <div className="space-y-4">
-      {children}
-    </div>
-  </div>
-);
-
-interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: ReactNode;
-  className?: string;
-}
-
-const CardFooter = ({ children, className = '', ...props }: CardFooterProps) => (
-  <div className={`p-6 pt-0 mt-auto ${className}`} {...props}>
-    <div className="flex items-center">
-      {children}
-    </div>
-  </div>
-);
-
-interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
-  children: ReactNode;
-  className?: string;
-}
-
-const CardTitle = ({ children, className = '', ...props }: CardTitleProps) => (
-  <h3 className={`text-xl font-bold tracking-tight text-foreground ${className}`} {...props}>
-    {children}
-  </h3>
-);
-
-interface CardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
-  children: ReactNode;
-  className?: string;
-}
-
-const CardDescription = ({ children, className = '', ...props }: CardDescriptionProps) => (
-  <p className={`text-muted-foreground leading-relaxed ${className}`} {...props}>
-    {children}
-  </p>
-);
-
-// Enhanced tabs components with better animations and TypeScript types
-interface TabsProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode;
-  defaultValue: string;
-  value?: string;
-  onValueChange?: (value: string) => void;
-  className?: string;
-}
-
-interface TabsContextType {
-  activeValue: string;
-  onValueChange: (value: string) => void;
-}
-
-const TabsContext = React.createContext<TabsContextType | null>(null);
-
-const Tabs = React.forwardRef<HTMLDivElement, TabsProps>(({ 
-  children, 
-  defaultValue, 
-  value: valueProp, 
-  onValueChange, 
+// Card Components
+const Card = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & { hoverable?: boolean }>(({ 
   className = '',
-  ...props 
-}, ref) => {
-  const [activeTab, setActiveTab] = React.useState<string>(defaultValue);
-  const value = valueProp !== undefined ? valueProp : activeTab;
-  
-  const handleTabChange = React.useCallback((val: string) => {
-    if (valueProp === undefined) {
-      setActiveTab(val);
-    }
-    onValueChange?.(val);
-  }, [onValueChange, valueProp]);
-  
-  const contextValue = React.useMemo(() => ({
-    activeValue: value,
-    onValueChange: handleTabChange
-  }), [value, handleTabChange]);
-  
-  return (
-    <div 
-      ref={ref} 
-      className={`w-full ${className}`} 
-      data-active-tab={value}
-      {...props}
-    >
-      <TabsContext.Provider value={contextValue}>
-        {children}
-      </TabsContext.Provider>
-    </div>
-  );
-});
-
-Tabs.displayName = 'Tabs';
-
-const useTabsContext = () => {
-  const context = React.useContext(TabsContext);
-  if (!context) {
-    throw new Error('Tabs compound components must be rendered within the Tabs component');
-  }
-  return context;
-};
-
-interface TabsListProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode;
-  className?: string;
-}
-
-const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(({ 
-  children, 
-  className = '',
+  hoverable = false,
   ...props 
 }, ref) => (
   <div 
     ref={ref}
-    className={`relative mb-8 ${className}`}
-    role="tablist"
+    className={`relative bg-card/50 backdrop-blur-sm border border-border/30 rounded-xl overflow-hidden transition-all duration-300 ease-in-out ${
+      hoverable ? 'hover:shadow-lg hover:border-accent/50 hover:-translate-y-1' : ''
+    } ${className}`}
+    {...props}
+  />
+));
+
+Card.displayName = 'Card';
+
+const CardHeader = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ 
+  className = '', 
+  ...props 
+}, ref) => (
+  <div 
+    ref={ref} 
+    className={`p-6 pb-2 ${className}`} 
+    {...props}
+  />
+));
+
+CardHeader.displayName = 'CardHeader';
+
+const CardTitle = forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(({ 
+  className = '', 
+  ...props 
+}, ref) => (
+  <h3 
+    ref={ref}
+    className={`text-xl font-bold tracking-tight text-foreground ${className}`} 
+    {...props}
+  />
+));
+
+CardTitle.displayName = 'CardTitle';
+
+const CardDescription = forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(({ 
+  className = '', 
+  ...props 
+}, ref) => (
+  <p 
+    ref={ref}
+    className={`text-muted-foreground leading-relaxed ${className}`} 
+    {...props}
+  />
+));
+
+CardDescription.displayName = 'CardDescription';
+
+const CardContent = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ 
+  className = '', 
+  ...props 
+}, ref) => (
+  <div 
+    ref={ref} 
+    className={`px-6 py-2 ${className}`} 
     {...props}
   >
-    <div className="flex space-x-1 bg-muted/30 p-1.5 rounded-xl">
-      {children}
-    </div>
+    {props.children}
   </div>
 ));
 
-TabsList.displayName = 'TabsList';
+CardContent.displayName = 'CardContent';
 
-interface TabsTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  children: React.ReactNode;
-  value: string;
-  isActive?: boolean;
-  className?: string;
-}
-
-const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(({ 
-  children, 
-  value, 
-  className = '',
+const CardFooter = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ 
+  className = '', 
   ...props 
-}, ref) => {
-  const context = useTabsContext();
-  const isActive = context.activeValue === value;
-  
+}, ref) => (
+  <div 
+    ref={ref}
+    className={`p-6 pt-0 mt-auto ${className}`} 
+    {...props}
+  >
+    {props.children}
+  </div>
+));
+
+CardFooter.displayName = 'CardFooter';
+
+// Tab panel component with animations using CSS for better performance
+const TabPanel = ({ 
+  isActive, 
+  children,
+  className = '' 
+}: { 
+  isActive: boolean; 
+  children: React.ReactNode;
+  className?: string;
+}) => {
   return (
-    <button
-      ref={ref}
-      type="button"
-      role="tab"
-      aria-selected={isActive}
-      aria-controls={`tabpanel-${value}`}
-      id={`tab-${value}`}
-      className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ease-in-out relative z-10 ${
-        isActive 
-          ? 'bg-white text-foreground shadow-sm' 
-          : 'text-muted-foreground hover:text-foreground/80'
-      } ${className}`}
-      onClick={() => context.onValueChange(value)}
-      {...props}
+    <motion.div
+      key={isActive ? 'active' : 'inactive'}
+      initial={false}
+      animate={isActive ? 'visible' : 'hidden'}
+      variants={{
+        visible: { 
+          opacity: 1, 
+          y: 0,
+          display: 'block',
+          transition: { duration: 0.3, ease: 'easeInOut' }
+        },
+        hidden: { 
+          opacity: 0, 
+          y: 10,
+          transition: { duration: 0.2, ease: 'easeInOut' },
+          transitionEnd: { display: 'none' }
+        }
+      }}
+      className={`${className} ${!isActive ? 'pointer-events-none' : ''}`}
     >
-      <span className="relative z-10">
-        {children}
-      </span>
-      {isActive && (
-        <motion.div 
-          layoutId="activeTab"
-          className="absolute inset-0 bg-white rounded-lg shadow-sm border border-border/20 z-0"
-          transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
-        />
-      )}
-    </button>
+      {children}
+    </motion.div>
   );
-});
-
-TabsTrigger.displayName = 'TabsTrigger';
-
-interface TabsContentProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onAnimationStart' | 'onDragStart' | 'onDragEnd' | 'onDrag' | 'style'> {
-  children: React.ReactNode;
-  value: string;
-  isActive?: boolean;
-  className?: string;
-}
-
-const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(({ 
-  children, 
-  value, 
-  className = '',
-  ...props 
-}, ref) => {
-  const context = useTabsContext();
-  const isActive = context.activeValue === value;
-  
-  if (!isActive) return null;
-  
-  return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={value}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.2 }}
-        data-value={value} 
-        className={className}
-        ref={ref}
-        role="tabpanel"
-        id={`tabpanel-${value}`}
-        aria-labelledby={`tab-${value}`}
-        tabIndex={0}
-        {...props as any}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
-  );
-});
-
-TabsContent.displayName = 'TabsContent';
-
-// Set display names for components
-TabsContent.displayName = 'TabsContent';
-TabsTrigger.displayName = 'TabsTrigger';
-TabsList.displayName = 'TabsList';
+};
 
 // Mock data for the Devotion Experience sections
-const fitnessPlans = [
+const workoutPrograms = [
   {
     id: 'strength-fundamentals',
     title: 'Strength Fundamentals',
@@ -417,295 +258,350 @@ const audioCoaching = [
   }
 ];
 
-export default function DevotionExperience() {
-  const [activeTab, setActiveTab] = useState('fitness');
-  
-      const fadeIn: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (i: number = 0) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: 0.1 * i,
-        duration: 0.6,
-        ease: [0.22, 1, 0.36, 1]
-      }
-    })
-  };
-
-  const staggerContainer: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
-  };
-
-  const handleStartPlan = (type: string, id: string) => {
-    let route = '';
-    
-    switch (type) {
-      case 'fitness':
-        route = `/account/dashboard/devotion/fitness/${id}`;
-        break;
-      case 'meal':
-        route = `/account/dashboard/devotion/meals/${id}`;
-        break;
-      case 'coaching':
-        route = `/account/dashboard/devotion/coaching/${id}`;
-        break;
-      default:
-        console.error('Unknown plan type:', type);
-        return;
-    }
-    
-    // In a real app, you might want to track the plan start or other analytics here
-    console.log(`Navigating to: ${route}`);
-    
-    // Use Next.js router to navigate
-    window.location.href = route;
-  };
-
+function ProgramCard({ 
+  title, 
+  description, 
+  progress = 0, 
+  daysCompleted = 0, 
+  totalDays = 0, 
+  locked = false,
+  href = '#'
+}: {
+  title: string;
+  description: string;
+  progress?: number;
+  daysCompleted?: number;
+  totalDays?: number;
+  locked?: boolean;
+  href?: string;
+}) {
   return (
-    <div className="space-y-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <motion.div 
-        initial="hidden" 
-        animate="visible" 
-        variants={fadeIn} 
-        className="text-center space-y-4 max-w-3xl mx-auto"
-      >
-        <motion.span 
-          className="inline-flex items-center rounded-full bg-accent/10 px-4 py-1.5 text-sm font-medium text-accent"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          Premium Content
-        </motion.span>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
-          Devotion Experience
-        </h1>
-        <p className="text-lg text-muted-foreground leading-relaxed">
-          Transform your body and mind with our exclusive content, designed to help you achieve your wellness goals through personalized fitness, nutrition, and mindset coaching.
-        </p>
-      </motion.div>
-
-      {/* Featured Program */}
-      <motion.div 
-        initial="hidden" 
-        animate="visible" 
-        variants={fadeIn} 
-        className="mt-8"
-      >
-        <Card className="overflow-hidden bg-gradient-to-br from-accent/5 to-accent/25 backdrop-blur border-accent/20 hover:shadow-lg hover:border-accent/30 transition-all duration-300">
-          <div className="md:flex">
-            <div className="md:w-1/3 bg-accent/10 p-6 flex items-center justify-center">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/20 mb-4">
-                  <FiAward className="w-8 h-8 text-accent" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Featured Program</h3>
-                <p className="text-sm text-muted-foreground">30-Day Transformation Challenge</p>
-              </div>
+    <Card className="overflow-hidden border-border/30 transition-all hover:border-accent/50">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between space-x-4">
+          <div>
+            <CardTitle className="text-lg font-medium">{title}</CardTitle>
+            <CardDescription className="mt-1">{description}</CardDescription>
+          </div>
+          {locked && (
+            <span className="inline-flex h-6 items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+              Coming Soon
+            </span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {!locked && progress > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Progress</span>
+              <span className="font-medium">{progress}%</span>
             </div>
-            <div className="p-6 md:w-2/3">
-              <CardHeader className="p-0 mb-4">
-                <CardTitle>30-Day Total Transformation</CardTitle>
-                <CardDescription>A holistic approach combining fitness, nutrition, and mindset coaching for maximum results.</CardDescription>
-              </CardHeader>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-background/40 backdrop-blur-sm p-4 rounded-lg border border-border/20">
-                  <h4 className="text-sm font-medium mb-2 flex items-center">
-                    <FiCalendar className="w-4 h-4 mr-2 text-accent" />
-                    Daily Workouts
-                  </h4>
-                  <p className="text-xs text-muted-foreground">5 sessions per week, 30-45 min each</p>
-                </div>
-                <div className="bg-background/40 backdrop-blur-sm p-4 rounded-lg border border-border/20">
-                  <h4 className="text-sm font-medium mb-2 flex items-center">
-                    <FiBook className="w-4 h-4 mr-2 text-accent" />
-                    Meal Plans
-                  </h4>
-                  <p className="text-xs text-muted-foreground">Customizable recipes & shopping lists</p>
-                </div>
-                <div className="bg-background/40 backdrop-blur-sm p-4 rounded-lg border border-border/20">
-                  <h4 className="text-sm font-medium mb-2 flex items-center">
-                    <FiPlay className="w-4 h-4 mr-2 text-accent" />
-                    Audio Coaching
-                  </h4>
-                  <p className="text-xs text-muted-foreground">Daily motivation & mindset training</p>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button asChild className="flex-1" variant="default">
-                  <Link href="/account/dashboard/devotion/programs/transformation">
-                    Start Free Trial
-                  </Link>
-                </Button>
-                <Button asChild className="flex-1" variant="outline">
-                  <Link href="/account/dashboard/devotion/programs/transformation/details">
-                    Learn More
-                  </Link>
-                </Button>
-              </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div 
+                className="h-full rounded-full bg-gradient-to-r from-accent to-accent/70 transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Day {daysCompleted} of {totalDays}</span>
+              <span>{Math.round(progress)}% Complete</span>
             </div>
           </div>
-        </Card>
-      </motion.div>
-
-      <Tabs 
-        defaultValue="fitness" 
-        value={activeTab} 
-        onValueChange={setActiveTab} 
-        className="mt-12"
-      >
-        <TabsList>
-          <TabsTrigger value="fitness">Fitness Plans ({fitnessPlans.length})</TabsTrigger>
-          <TabsTrigger value="meals">Meal Plans ({mealPlans.length})</TabsTrigger>
-          <TabsTrigger value="coaching">Audio Coaching ({audioCoaching.length})</TabsTrigger>
-        </TabsList>
-        <TabsContent value="fitness">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {fitnessPlans.map((plan, index) => (
-              <motion.div
-                key={plan.id}
-                custom={index}
-                initial="hidden"
-                animate="visible"
-                variants={fadeIn}
-              >
-                <Card className="h-full hover:shadow-lg transition-shadow duration-300" hoverable>
-                  <CardHeader>
-                    <div className="aspect-video bg-muted/50 rounded-lg mb-4 overflow-hidden">
-                      <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${plan.image})` }} />
-                    </div>
-                    <CardTitle>{plan.title}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="inline-flex items-center">
-                        <FiAward className="mr-1.5 h-4 w-4" />
-                        {plan.level}
-                      </span>
-                      <span className="inline-flex items-center">
-                        <FiClock className="mr-1.5 h-4 w-4" />
-                        {plan.duration}
-                      </span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="border-t pt-4">
-                    <Button 
-                      className="w-full" 
-                      onClick={() => handleStartPlan('fitness', plan.id)}
-                    >
-                      Start Plan
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </TabsContent>
-        {/* Meal Plans Tab */}
-        <TabsContent value="meals">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mealPlans.map((plan, index) => (
-              <motion.div
-                key={plan.id}
-                custom={index}
-                initial="hidden"
-                animate="visible"
-                variants={fadeIn}
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-              >
-                <Card className="h-full hover:shadow-lg transition-shadow duration-300" hoverable>
-                  <CardHeader>
-                    <div className="aspect-video bg-muted/50 rounded-lg mb-4 overflow-hidden">
-                      <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${plan.image})` }} />
-                    </div>
-                    <CardTitle>{plan.title}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="inline-flex items-center">
-                        <FiClock className="mr-1.5 h-4 w-4" />
-                        {plan.duration}
-                      </span>
-                      <span className="inline-flex items-center">
-                        <FiCoffee className="mr-1.5 h-4 w-4" />
-                        {plan.meals} Meals
-                      </span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="border-t pt-4">
-                    <Button 
-                      className="w-full" 
-                      onClick={() => handleStartPlan('meal', plan.id)}
-                    >
-                      Start Plan
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </TabsContent>
+        )}
         
-        {/* Audio Coaching Tab */}
-        <TabsContent value="coaching">
+        {!locked && progress === 0 && (
+          <div className="text-sm text-muted-foreground">
+            <p>Ready to begin your journey</p>
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="border-t border-border/10 bg-muted/5 p-4">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="ml-auto" 
+          disabled={locked}
+          asChild={!locked}
+        >
+          {locked ? (
+            <span>Locked</span>
+          ) : (
+            <Link href={href} className="flex items-center">
+              {progress > 0 ? 'Continue' : 'Start'}
+              <FiArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          )}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
+// Featured Program Component
+const FeaturedProgram = ({ 
+  title, 
+  subtitle,
+  description, 
+  image = '/images/fitness-placeholder.jpg',
+  progress = 0, 
+  daysCompleted = 0, 
+  totalDays = 0, 
+  href = '#',
+  startDate = 'June 2025'
+}: {
+  title: string;
+  subtitle: string;
+  description: string;
+  image?: string;
+  progress?: number;
+  daysCompleted?: number;
+  totalDays?: number;
+  href?: string;
+  startDate?: string;
+}) => {
+  return (
+    <motion.div 
+      variants={{
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
+      }}
+      className="relative bg-gradient-to-br from-accent/5 to-accent/10 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden mb-10"
+    >
+      <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl -mr-20 -mt-20 z-0"></div>
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl -ml-20 -mb-20 z-0"></div>
+      
+      <div className="flex flex-col md:flex-row gap-6 p-6">
+        <div className="relative md:w-1/3 lg:w-2/5 shrink-0">
+          <div className="aspect-[4/3] relative rounded-lg overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-tr from-accent/40 via-transparent to-transparent mix-blend-overlay z-10"></div>
+            <div 
+              className="absolute inset-0 bg-cover bg-center" 
+              style={{ backgroundImage: `url(${image})` }}
+            ></div>
+            <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full z-20">
+              <span className="text-xs font-semibold text-white">Featured this Month</span>
+            </div>
+            <div className="absolute bottom-4 right-4 bg-accent/90 backdrop-blur-sm px-3 py-1.5 rounded-full z-20">
+              <span className="text-xs font-semibold text-white">Starts {startDate}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex flex-col justify-between md:w-2/3 lg:w-3/5 relative z-10">
+          <div>
+            <div className="mb-2">
+              <span className="text-xs uppercase tracking-wide font-medium text-accent/80">{subtitle}</span>
+            </div>
+            <h3 className="text-xl font-bold mb-2">{title}</h3>
+            <p className="text-muted-foreground mb-4">{description}</p>
+            
+            {progress > 0 && (
+              <div className="mb-4">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium">Progress</span>
+                  <span>{progress}%</span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-accent/70 to-accent h-2 rounded-full" 
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Day {daysCompleted} of {totalDays}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-4 mt-4">
+            <Link 
+              href={href}
+              className="inline-flex items-center justify-center h-10 px-6 py-2 bg-accent hover:bg-accent/90 text-white font-medium rounded-md transition-colors duration-200"
+            >
+              {progress > 0 ? 'Continue' : 'Start Now'}
+            </Link>
+            <Link
+              href={`${href}/details`}
+              className="text-sm font-medium text-accent hover:text-accent/80 transition-colors duration-200 inline-flex items-center gap-1 group"
+            >
+              View Details
+              <FiArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+export default function DevotionExperience() {
+  const [activeTab, setActiveTab] = React.useState('fitness');
+  
+  return (
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="p-6 md:p-8 relative overflow-hidden min-h-screen"
+    >
+      {/* Premium Background Effects */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-tr from-accent/5 via-background to-accent/5"></div>
+        <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-accent/5 to-transparent opacity-60"></div>
+        <div className="absolute bottom-0 right-0 w-2/3 h-1/3 bg-gradient-to-tl from-accent/5 to-transparent blur-3xl"></div>
+        <div className="absolute top-1/4 right-0 w-96 h-96 rounded-full bg-accent/5 blur-3xl opacity-40"></div>
+        <div className="absolute inset-0 bg-[url('/images/texture.png')] opacity-5 mix-blend-overlay"></div>
+      </div>
+      
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="mb-12 relative"
+      >
+        <div className="inline-block mb-4">
+          <span className="text-accent text-sm uppercase tracking-widest font-medium bg-accent/5 px-3 py-1 rounded-full border border-accent/10 shadow-sm">
+            LivAuthentik Devotion
+          </span>
+        </div>
+        
+        <div>
+          <h1 className="text-3xl md:text-4xl font-serif font-light text-foreground tracking-tight leading-tight">
+            Your <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent via-amber-400 to-accent/80 font-medium">Devotion</span> Journey
+          </h1>
+          <div className="h-px w-24 bg-gradient-to-r from-accent/40 to-transparent my-4"></div>
+          <p className="text-lg text-muted-foreground font-light">
+            Transform your mind, body, and spirit with our exclusive devotion programs
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Luxury Tab Navigation */}
+      <div className="mb-10 relative">
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/20 to-transparent"></div>
+        <div className="flex flex-wrap -mb-px relative z-10">
+          <button
+            onClick={() => setActiveTab('fitness')}
+            className={`mr-8 py-3 px-1 font-medium text-sm border-b-2 transition-all duration-300 ${
+              activeTab === 'fitness' 
+                ? 'text-accent border-accent' 
+                : 'text-muted-foreground border-transparent hover:text-foreground hover:border-accent/30'
+            }`}
+          >
+            <div className="flex items-center">
+              <span className={`w-1.5 h-1.5 rounded-full mr-2 transition-all duration-300 ${activeTab === 'fitness' ? 'bg-accent' : 'bg-muted-foreground/40'}`}></span>
+              <FiAward className="mr-2 h-4 w-4" /> Fitness
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('nutrition')}
+            className={`mr-8 py-3 px-1 font-medium text-sm border-b-2 transition-all duration-300 ${
+              activeTab === 'nutrition' 
+                ? 'text-accent border-accent' 
+                : 'text-muted-foreground border-transparent hover:text-foreground hover:border-accent/30'
+            }`}
+          >
+            <div className="flex items-center">
+              <span className={`w-1.5 h-1.5 rounded-full mr-2 transition-all duration-300 ${activeTab === 'nutrition' ? 'bg-accent' : 'bg-muted-foreground/40'}`}></span>
+              <FiCoffee className="mr-2 h-4 w-4" /> Nutrition
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('mind')}
+            className={`mr-8 py-3 px-1 font-medium text-sm border-b-2 transition-all duration-300 ${
+              activeTab === 'mind' 
+                ? 'text-accent border-accent' 
+                : 'text-muted-foreground border-transparent hover:text-foreground hover:border-accent/30'
+            }`}
+          >
+            <div className="flex items-center">
+              <span className={`w-1.5 h-1.5 rounded-full mr-2 transition-all duration-300 ${activeTab === 'mind' ? 'bg-accent' : 'bg-muted-foreground/40'}`}></span>
+              <FiHeadphones className="mr-2 h-4 w-4" /> Mind
+            </div>
+          </button>
+        </div>
+      </div>
+      
+      <div className="mt-8">
+        {/* Fitness Tab */}
+        <TabPanel isActive={activeTab === 'fitness'}>
+          <FeaturedProgram
+            title="Elite Power & Performance"
+            subtitle="Featured Fitness Program"
+            description="Our signature 12-week progressive strength and conditioning program designed to maximize athletic performance, build lean muscle, and enhance overall fitness. Includes personalized progression tracking and advanced training techniques."
+            progress={0}
+            daysCompleted={0}
+            totalDays={84}
+            href="/account/dashboard/devotion/fitness/elite-power-performance"
+            image="/images/fitness-elite.jpg"
+            startDate="June 15, 2025"
+          />
+          
+          <h2 className="text-2xl font-serif font-light mt-12 mb-6 text-foreground">Your Active Programs</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {audioCoaching.map((session, index) => (
-              <motion.div
-                key={session.id}
-                custom={index}
-                initial="hidden"
-                animate="visible"
-                variants={fadeIn}
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-              >
-                <Card className="h-full hover:shadow-lg transition-shadow duration-300" hoverable>
-                  <CardHeader>
-                    <div className="aspect-video bg-muted/50 rounded-lg mb-4 overflow-hidden">
-                      <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${session.image})` }} />
-                    </div>
-                    <CardTitle>{session.title}</CardTitle>
-                    <CardDescription>{session.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="inline-flex items-center">
-                        <FiClock className="mr-1.5 h-4 w-4" />
-                        {session.duration}
-                      </span>
-                      <span className="inline-flex items-center">
-                        <FiHeadphones className="mr-1.5 h-4 w-4" />
-                        {session.episodes} Sessions
-                      </span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="border-t pt-4">
-                    <Button 
-                      className="w-full" 
-                      onClick={() => handleStartPlan('coaching', session.id)}
-                    >
-                      Start Session
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </motion.div>
+            {workoutPrograms.map((program: any) => (
+              <ProgramCard key={program.id} {...program} />
             ))}
           </div>
-        </TabsContent>
-      </Tabs>
-
-
-    </div>
+        </TabPanel>
+        
+        {/* Nutrition Tab */}
+        <TabPanel isActive={activeTab === 'nutrition'}>
+          <FeaturedProgram
+            title="Luxury Wellness Cuisine"
+            subtitle="Featured Nutrition Program"
+            description="Experience the art of mindful eating with our premium culinary wellness program. This 28-day journey combines gourmet nutrition with science-backed meal planning, featuring seasonal ingredients and chef-crafted recipes designed to nourish both body and soul."
+            progress={30}
+            daysCompleted={8}
+            totalDays={28}
+            href="/account/dashboard/devotion/nutrition/wellness-cuisine"
+            image="/images/nutrition-luxury.jpg"
+            startDate="June 1, 2025"
+          />
+          
+          <h2 className="text-2xl font-serif font-light mt-12 mb-6 text-foreground">Your Active Programs</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mealPlans.map((plan: any) => (
+              <ProgramCard key={plan.id} {...plan} />
+            ))}
+          </div>
+        </TabPanel>
+        
+        {/* Mind Tab */}
+        <TabPanel isActive={activeTab === 'mind'}>
+          <FeaturedProgram
+            title="Mindful Mastery Journey"
+            subtitle="Featured Mind Program"
+            description="A transformative 6-week mindfulness and mental performance program designed to enhance focus, reduce stress, and unlock your full cognitive potential. Includes daily guided meditations, breathing exercises, and cognitive training techniques."
+            progress={65}
+            daysCompleted={23}
+            totalDays={42}
+            href="/account/dashboard/devotion/mind/mindful-mastery"
+            image="/images/mind-mastery.jpg"
+            startDate="May 18, 2025"
+          />
+          
+          <h2 className="text-2xl font-serif font-light mt-12 mb-6 text-foreground">Your Active Programs</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {audioCoaching.map((program: any) => (
+              <ProgramCard key={program.id} {...program} />
+            ))}
+          </div>
+        </TabPanel>
+      </div>
+    </motion.div>
   );
 }

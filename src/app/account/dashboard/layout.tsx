@@ -80,7 +80,7 @@ export default function DashboardLayout({
         <div className="absolute inset-0 bg-[url('/images/texture.png')] opacity-5 mix-blend-overlay"></div>
       </div>
       
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 mt-8">
 
         {/* Main content */}
         <motion.div

@@ -3,11 +3,23 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePathname } from 'next/navigation';
 
 export default function CartButton() {
   const { cartCount, openCart } = useCart();
   const [isHovered, setIsHovered] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const pathname = usePathname();
+  
+  // Determine if we're on pages that need a transparent header (home, shop, products, programs, about, rewards)
+  const isTransparentHeaderPage = 
+    pathname === '/' || 
+    pathname === '/shop' || 
+    pathname === '/about' ||
+    pathname === '/rewards' ||
+    pathname.startsWith('/products') || 
+    pathname.startsWith('/programs');
 
   // Animate the cart icon when count changes
   useEffect(() => {
@@ -17,10 +29,21 @@ export default function CartButton() {
       return () => clearTimeout(timer);
     }
   }, [cartCount]);
+  
+  // Handle scroll effect for color change
+  useEffect(() => {
+    const handleScroll = () => {
+      // Use exactly 5px threshold for instant synchronization with header
+      setIsScrolled(window.scrollY > 5);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <button
-      className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-accent/10 transition-colors duration-300"
+      className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-accent/10 transition-colors duration-200"
       onClick={openCart}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -33,7 +56,7 @@ export default function CartButton() {
           className="relative z-10"
         >
           <svg 
-            className={`h-6 w-6 transition-colors duration-300 ${isHovered ? 'text-accent' : 'text-foreground'}`} 
+            className={`h-6 w-6 transition-all duration-200 ${isHovered ? 'text-accent' : isScrolled || !isTransparentHeaderPage ? 'text-foreground' : 'text-[#fffff0]'}`} 
             fill="none" 
             viewBox="0 0 24 24" 
             strokeWidth="1.5" 

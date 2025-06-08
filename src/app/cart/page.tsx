@@ -35,12 +35,12 @@ export default function CartPage() {
   const total = subtotal + tax;
   
   // Handle quantity update
-  const handleQuantityChange = async (itemId: string | number, newQuantity: number) => {
+  const handleQuantityChange = async (cartItemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
-    const id = typeof itemId === 'string' ? parseInt(itemId, 10) : itemId;
-    setIsProcessing(id);
+    const numericId = parseInt(cartItemId.split('-')[0], 10);
+    setIsProcessing(numericId);
     try {
-      updateQuantity(id, newQuantity);
+      updateQuantity(cartItemId, newQuantity);
       toast.success('Cart updated');
     } catch (error) {
       console.error('Error updating quantity:', error);
@@ -51,11 +51,11 @@ export default function CartPage() {
   };
   
   // Handle remove item
-  const handleRemoveItem = async (itemId: string | number) => {
-    const id = typeof itemId === 'string' ? parseInt(itemId, 10) : itemId;
-    setIsProcessing(id);
+  const handleRemoveItem = async (cartItemId: string) => {
+    const numericId = parseInt(cartItemId.split('-')[0], 10);
+    setIsProcessing(numericId);
     try {
-      removeFromCart(id);
+      removeFromCart(cartItemId);
       toast.success('Item removed from cart');
     } catch (error) {
       console.error('Error removing item:', error);
@@ -66,11 +66,11 @@ export default function CartPage() {
   };
   
   // Handle subscription toggle
-  const handleToggleSubscription = async (itemId: string | number) => {
-    const id = typeof itemId === 'string' ? parseInt(itemId, 10) : itemId;
-    setIsProcessing(id);
+  const handleToggleSubscription = async (cartItemId: string) => {
+    const numericId = parseInt(cartItemId.split('-')[0], 10);
+    setIsProcessing(numericId);
     try {
-      toggleSubscription(id);
+      toggleSubscription(cartItemId);
       toast.success('Subscription updated');
     } catch (error) {
       console.error('Error toggling subscription:', error);
@@ -148,7 +148,7 @@ export default function CartPage() {
                         )}
                       </div>
                       <button 
-                        onClick={() => handleRemoveItem(item.id)}
+                        onClick={() => handleRemoveItem(item.cartItemId || `${item.id}-${item.description || ''}-${item.isSubscription ? 'sub' : 'one'}`)}
                         disabled={isProcessing === item.id}
                         className="text-muted-foreground hover:text-destructive h-6 w-6 flex items-center justify-center disabled:opacity-50"
                         aria-label="Remove item"
@@ -164,7 +164,7 @@ export default function CartPage() {
                     <div className="mt-4 flex items-center justify-between">
                       <div className="flex items-center border border-border rounded-md">
                         <button
-                          onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                          onClick={() => handleQuantityChange(item.cartItemId || `${item.id}-${item.description || ''}-${item.isSubscription ? 'sub' : 'one'}`, item.quantity - 1)}
                           disabled={isProcessing === item.id || item.quantity <= 1}
                           className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Decrease quantity"
@@ -179,7 +179,7 @@ export default function CartPage() {
                           {isProcessing === item.id ? '...' : item.quantity}
                         </span>
                         <button
-                          onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                          onClick={() => handleQuantityChange(item.cartItemId || `${item.id}-${item.description || ''}-${item.isSubscription ? 'sub' : 'one'}`, item.quantity + 1)}
                           disabled={isProcessing === item.id}
                           className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Increase quantity"
@@ -216,7 +216,7 @@ export default function CartPage() {
                     {typeof item.subscriptionPrice !== 'undefined' && (
                       <div className="mt-3">
                         <button
-                          onClick={() => handleToggleSubscription(item.id)}
+                            onClick={() => handleToggleSubscription(item.cartItemId || `${item.id}-${item.description || ''}-${item.isSubscription ? 'sub' : 'one'}`)}
                           disabled={isProcessing === item.id}
                           className="text-xs text-accent hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                         >

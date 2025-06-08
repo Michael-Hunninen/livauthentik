@@ -24,7 +24,7 @@ export default function StripeProvider({ children, clientSecret }: StripeProvide
             colorBackground: '#fffff0',
             colorText: '#1a0f08',
             colorDanger: '#df1b41',
-            fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+            fontFamily: 'Arial, ui-sans-serif, system-ui, sans-serif',
             borderRadius: '8px',
           },
         },

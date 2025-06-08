@@ -25,16 +25,79 @@ export default function CheckoutPage() {
     country: 'US',
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [step, setStep] = useState(1);
-  const [clientSecret, setClientSecret] = useState('');
+  const [isDirect, setIsDirect] = useState(false);
+  const [directItems, setDirectItems] = useState<any[]>([]);
+  const [directTotal, setDirectTotal] = useState(0);
 
-  // Redirect to home if cart is empty
+  // Track if initialization is complete to avoid premature redirects
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Check for direct checkout and load items from localStorage
   useEffect(() => {
-    if (cartItems.length === 0) {
+    // Check if this is a direct checkout from URL parameter
+    const params = new URLSearchParams(window.location.search);
+    const isDirectCheckout = params.get('direct') === 'true';
+    setIsDirect(isDirectCheckout);
+    
+    if (isDirectCheckout) {
+      // Load items from direct checkout storage
+      const directCheckoutData = localStorage.getItem('livauthentik-direct-checkout');
+      console.log('Direct checkout data:', directCheckoutData);
+      
+      if (directCheckoutData) {
+        try {
+          const data = JSON.parse(directCheckoutData);
+          console.log('Parsed direct checkout items:', data.items);
+          setDirectItems(data.items);
+          
+          // Calculate total for direct items
+          const total = data.items.reduce((sum: number, item: any) => {
+            const getNumericPrice = (price: string | number): number => {
+              if (typeof price === 'number') return price;
+              return parseFloat(price.toString().replace('$', ''));
+            };
+            
+            const itemPrice = getNumericPrice(item.price);
+            return sum + (itemPrice * item.quantity);
+          }, 0);
+          
+          setDirectTotal(total);
+        } catch (error) {
+          console.error('Error parsing direct checkout data:', error);
+        }
+      } else {
+        console.log('No direct checkout data found in localStorage');
+      }
+    }
+    
+    // Mark initialization as complete after processing
+    setIsInitialized(true);
+  }, []);
+
+  // Redirect to home if cart is empty and not direct checkout
+  // Only run this check after initialization is complete
+  useEffect(() => {
+    // Skip this check until initialization is complete
+    if (!isInitialized) return;
+    
+    console.log('Checking if redirect needed:', { 
+      isInitialized,
+      cartItems: cartItems.length,
+      isDirect,
+      directItems: directItems.length
+    });
+    
+    if (cartItems.length === 0 && !isDirect) {
+      console.log('Redirecting: Empty cart and not direct checkout');
+      router.push('/');
+    } else if (isDirect && directItems.length === 0) {
+      console.log('Redirecting: Direct checkout but no items found');
       router.push('/');
     }
-  }, [cartItems, router]);
+  }, [cartItems, router, isDirect, directItems, isInitialized]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -56,57 +119,71 @@ export default function CheckoutPage() {
   };
 
   const createPaymentIntent = async () => {
-    setLoading(true);
-    setError('');
-
     try {
-      // Create a payment intent with Stripe
-      const response = await fetch('/api/stripe/payment-intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          items: cartItems,
-          isSubscription: cartItems.some(item => item.isSubscription),
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create payment intent');
+      // Only set loading if we don't have a client secret yet
+      if (!clientSecret) {
+        setLoading(true);
       }
-
-      const data = await response.json();
-      setClientSecret(data.clientSecret);
+      setError(null);
       
-      // Move to the next step
-      setStep(3);
+      // In a real app, you would call your API to create a PaymentIntent
+      // For demo purposes, we'll simulate an API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Simulate getting a client secret from your backend
+      setClientSecret('pi_mock_client_secret_' + Math.random().toString(36).substr(2, 9));
     } catch (err) {
-      setError('An error occurred while preparing your payment. Please try again.');
-      console.error(err);
+      console.error('Error creating payment intent:', err);
+      setError('Failed to initialize payment. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-  
+
+  // Create payment intent when reaching the payment step
+  useEffect(() => {
+    if (step === 2 && !clientSecret && !loading) {
+      createPaymentIntent();
+    }
+  }, [step]);
+
   const handlePaymentSuccess = () => {
+    // Clear both regular cart and direct checkout storage
     clearCart();
+    localStorage.removeItem('livauthentik-direct-checkout');
     router.push('/checkout/success');
   };
 
   // Calculate the total price in cents for Stripe
   const calculateTotalInCents = () => {
-    return cartItems.reduce((total, item) => {
-      const price = item.isSubscription && item.subscriptionPrice 
-        ? parseFloat(String(item.subscriptionPrice).replace(/[^0-9.]/g, '')) * 100
-        : parseFloat(String(item.price).replace(/[^0-9.]/g, '')) * 100;
-      
-      return total + (price * item.quantity);
-    }, 0);
+    if (isDirect) {
+      return directItems.reduce((total, item) => {
+        const price = parseFloat(String(item.price).replace(/[^0-9.]/g, ''));
+        return total + (price * item.quantity);
+      }, 0);
+    } else {
+      return cartItems.reduce((total, item) => {
+        const price = item.isSubscription && item.subscriptionPrice 
+          ? parseFloat(String(item.subscriptionPrice).replace(/[^0-9.]/g, '')) * 100
+          : parseFloat(String(item.price).replace(/[^0-9.]/g, '')) * 100;
+        
+        return total + (price * item.quantity);
+      }, 0);
+    }
   };
 
-  if (cartItems.length === 0) {
+  // Get the items to display (either from cart or direct checkout)
+  const getDisplayItems = () => {
+    return isDirect ? directItems : cartItems;
+  };
+  
+  // Get the total price to display
+  const getDisplayTotal = () => {
+    return isDirect ? directTotal : cartTotal;
+  };
+
+  // Check if we have items to show (either from cart or direct checkout)
+  if (cartItems.length === 0 && (!isDirect || directItems.length === 0)) {
     return null; // Will redirect in useEffect
   }
 
@@ -118,16 +195,18 @@ export default function CheckoutPage() {
         {/* Checkout Progress */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center space-x-4">
-            <div className={`rounded-full h-8 w-8 flex items-center justify-center ${step >= 1 ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'}`}>
-              1
+            <div className="flex flex-col items-center">
+              <div className={`rounded-full h-8 w-8 flex items-center justify-center ${step >= 1 ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'}`}>
+                1
+              </div>
+              <span className="text-xs mt-1">Shipping</span>
             </div>
             <div className={`h-1 w-16 ${step >= 2 ? 'bg-accent' : 'bg-muted'}`}></div>
-            <div className={`rounded-full h-8 w-8 flex items-center justify-center ${step >= 2 ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'}`}>
-              2
-            </div>
-            <div className={`h-1 w-16 ${step >= 3 ? 'bg-accent' : 'bg-muted'}`}></div>
-            <div className={`rounded-full h-8 w-8 flex items-center justify-center ${step >= 3 ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'}`}>
-              3
+            <div className="flex flex-col items-center">
+              <div className={`rounded-full h-8 w-8 flex items-center justify-center ${step >= 2 ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'}`}>
+                2
+              </div>
+              <span className="text-xs mt-1">Payment</span>
             </div>
           </div>
         </div>
@@ -140,9 +219,9 @@ export default function CheckoutPage() {
               <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
               
               <div className="space-y-4 mb-6">
-                {cartItems.map((item) => (
-                  <div key={`${item.id}-${item.isSubscription ? 'sub' : 'one'}`} className="flex items-center space-x-4">
-                    <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-border">
+                {getDisplayItems().map((item, index) => (
+                  <div key={index} className="flex gap-4 items-center">
+                    <div className="w-16 h-16 rounded-md overflow-hidden bg-background border border-border flex-shrink-0">
                       {item.imageSrc ? (
                         <Image
                           src={item.imageSrc}
@@ -178,7 +257,7 @@ export default function CheckoutPage() {
               <div className="border-t border-border pt-4">
                 <div className="flex justify-between py-2">
                   <span className="text-sm text-muted-foreground">Subtotal</span>
-                  <span className="text-sm font-medium">${(cartTotal / 100).toFixed(2)}</span>
+                  <span className="text-sm font-medium">${getDisplayTotal().toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between py-2">
                   <span className="text-sm text-muted-foreground">Shipping</span>
@@ -190,7 +269,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between py-2 border-t border-border mt-2">
                   <span className="text-base font-semibold">Total</span>
-                  <span className="text-base font-semibold">${(cartTotal / 100).toFixed(2)}</span>
+                  <span className="text-base font-semibold">${getDisplayTotal().toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -363,7 +442,7 @@ export default function CheckoutPage() {
               </motion.div>
             )}
             
-            {/* Payment Method Selection - Step 2 */}
+            {/* Payment Form - Step 2 */}
             {step === 2 && (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -371,7 +450,7 @@ export default function CheckoutPage() {
                 transition={{ duration: 0.3 }}
                 className="bg-card rounded-xl shadow-sm p-6 border border-border/40"
               >
-                <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
+                <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
                 
                 {error && (
                   <div className="bg-destructive/10 text-destructive rounded-md p-3 mb-4">
@@ -381,20 +460,7 @@ export default function CheckoutPage() {
                 
                 <div className="space-y-6">
                   <div className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="radio"
-                        id="card-payment"
-                        name="payment-method"
-                        className="h-4 w-4 text-accent focus:ring-accent"
-                        defaultChecked
-                      />
-                      <label htmlFor="card-payment" className="text-sm font-medium">
-                        Credit / Debit Card
-                      </label>
-                    </div>
-                    
-                    <div className="ml-7 flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 mb-2">
                       <div className="h-8 w-12 bg-gray-100 rounded flex items-center justify-center">
                         <span className="text-xs">Visa</span>
                       </div>
@@ -408,65 +474,49 @@ export default function CheckoutPage() {
                         <span className="text-xs">Disc</span>
                       </div>
                     </div>
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground">
-                    Your payment information will be securely processed. We never store your full card details.
-                  </p>
-                  
-                  <div className="flex items-center justify-between pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setStep(1)}
-                      className="text-sm text-accent hover:underline"
-                    >
-                      Back to Shipping
-                    </button>
                     
-                    <button
-                      type="button"
-                      onClick={createPaymentIntent}
-                      disabled={loading}
-                      className="px-6 py-2 bg-accent text-accent-foreground rounded-full font-medium hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-70 flex items-center"
-                    >
-                      {loading ? (
-                        <>
-                          <div className="h-4 w-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin mr-2"></div>
-                          <span>Processing...</span>
-                        </>
-                      ) : (
-                        <span>Continue to Payment</span>
-                      )}
-                    </button>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Your payment information will be securely processed. We never store your full card details.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      {loading && !clientSecret ? (
+                        <div className="flex justify-center py-8">
+                          <div className="flex flex-col items-center space-y-2">
+                            <div className="h-8 w-8 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin"></div>
+                            <span className="text-sm text-muted-foreground">Preparing payment form...</span>
+                          </div>
+                        </div>
+                      ) : error ? (
+                        <div className="bg-destructive/10 text-destructive rounded-md p-3">
+                          {error}
+                          <button
+                            onClick={createPaymentIntent}
+                            className="mt-2 text-sm text-destructive underline"
+                          >
+                            Try again
+                          </button>
+                        </div>
+                      ) : clientSecret ? (
+                        <StripeProvider clientSecret={clientSecret}>
+                          <PaymentForm 
+                            total={calculateTotalInCents()}
+                            onSuccess={handlePaymentSuccess}
+                          />
+                        </StripeProvider>
+                      ) : null}
+                      
+                      <div className="flex justify-between pt-4">
+                        <button
+                          type="button"
+                          onClick={() => setStep(1)}
+                          className="px-4 py-2 border border-border rounded-full font-medium hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                        >
+                          Back to Shipping
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
-            
-            {/* Stripe Payment Form - Step 3 */}
-            {step === 3 && clientSecret && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-card rounded-xl shadow-sm p-6 border border-border/40"
-              >
-                <h2 className="text-xl font-semibold mb-4">Complete Payment</h2>
-                <StripeProvider clientSecret={clientSecret}>
-                  <PaymentForm 
-                    total={calculateTotalInCents()}
-                    onSuccess={handlePaymentSuccess}
-                  />
-                </StripeProvider>
-                
-                <div className="mt-4 pt-4 border-t border-border">
-                  <button
-                    type="button"
-                    onClick={() => setStep(2)}
-                    className="text-sm text-accent hover:underline"
-                  >
-                    Back to previous step
-                  </button>
                 </div>
               </motion.div>
             )}
