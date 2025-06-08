@@ -58,20 +58,41 @@ export async function GET() {
     const token = authHeader.split(' ')[1];
     console.log(`[${requestId}] Token received (${token.length} chars)`);
     
+    // Check for environment variables individually
+    const missingVars = [];
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) missingVars.push('NEXT_PUBLIC_SUPABASE_URL');
+    if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    
     // Log environment variables (without sensitive values)
     console.log(`[${requestId}] Environment check:`, {
       hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      missingVars,
       nodeEnv: process.env.NODE_ENV,
       urlLength: process.env.NEXT_PUBLIC_SUPABASE_URL?.length,
       keyLength: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length
     });
 
-    // If environment variables are missing, return mock data instead of error
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      console.log(`[${requestId}] Missing Supabase environment variables - returning mock data`);
+    // If environment variables are missing, return detailed error
+    if (missingVars.length > 0) {
+      console.log(`[${requestId}] Missing Supabase environment variables: ${missingVars.join(', ')}`);
       
-      // Return mock data that matches the expected structure
+      const errorMessage = `Missing required environment variables: ${missingVars.join(', ')}`;
+      logError('Configuration error', new Error(errorMessage), { requestId, missingVars });
+      
+      // Return detailed error response
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: errorMessage,
+          missingVars,
+          requestId
+        },
+        { status: 500 }
+      );
+      
+      // Disabled mock data approach to ensure real data is working
+      /*
       const mockData = {
         success: true,
         points: 250,
@@ -129,16 +150,19 @@ export async function GET() {
         requestId,
         timestamp: new Date().toISOString(),
         duration: Date.now() - startTime
-      };
-      
-      return NextResponse.json(mockData);
+      }
+      */
     }
 
     // Create a Supabase client with the provided token
     console.log(`[${requestId}] Creating Supabase client...`);
+    // Since we already checked env vars above, we know these exist
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+    
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      supabaseUrl,
+      supabaseKey,
       {
         auth: {
           autoRefreshToken: false,
@@ -148,7 +172,7 @@ export async function GET() {
         global: {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+            'apikey': supabaseKey
           }
         }
       }
