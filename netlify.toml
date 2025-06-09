@@ -1,6 +1,7 @@
 [build]
   command = "npm run build"
   publish = ".next"
+  functions = "functions"
 
 [build.environment]
   # Next.js configuration
@@ -8,12 +9,9 @@
   NEXT_TELEMETRY_DISABLED = "1"
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
 
-# Next.js plugin with static 404 page support
+# Next.js plugin
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-  [plugins.inputs]
-    enableStatic404 = true
-    functions = "functions"
 
 # Client-side routing
 [[redirects]]
