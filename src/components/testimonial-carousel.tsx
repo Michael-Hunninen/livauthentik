@@ -59,7 +59,7 @@ export function TestimonialCarousel() {
   const touchEndX = useRef(0);
   const itemCount = testimonials.length;
   
-  const itemWidth = 480; // Increased width for landscape images
+  const itemWidth = typeof window !== 'undefined' && window.innerWidth < 768 ? window.innerWidth * 0.92 : 580; // Increased width for both mobile and desktop
   const angle = 360 / itemCount; // Angle between items
   const radius = Math.round((itemWidth / 2) / Math.tan(Math.PI / itemCount)); // Carousel radius
 
@@ -166,7 +166,7 @@ export function TestimonialCarousel() {
 
   return (
     <div 
-      className="relative w-full h-[500px] overflow-visible flex items-center justify-center"
+      className="relative w-full h-[550px] md:h-[600px] overflow-visible flex flex-col items-center justify-center"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
@@ -175,13 +175,7 @@ export function TestimonialCarousel() {
       ref={carouselRef}
     >
       {/* Navigation Buttons */}
-      <button 
-        onClick={handlePrev}
-        className="carousel-nav-button carousel-nav-prev hidden md:flex"
-        aria-label="Previous testimonial"
-      >
-        <ChevronLeft className="w-5 h-5 text-white" />
-      </button>
+      {/* Removed duplicate buttons */}
       
       <div className="relative w-full h-full" style={{ perspective: '800px' }}>
         <div 
@@ -206,7 +200,7 @@ export function TestimonialCarousel() {
               return (
                 <motion.div
                   key={testimonial.id}
-                  className={`absolute w-full max-w-[460px] mx-auto testimonial-card ${
+                  className={`absolute w-[92vw] md:w-full max-w-[580px] mx-auto testimonial-card ${
                     isActive ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
                   }`}
                   style={{
@@ -243,7 +237,7 @@ export function TestimonialCarousel() {
                   }}
                 >
                   <motion.div 
-                    className="bg-gradient-to-br from-[#f9f5f0]/80 to-[#f0e6d9]/90 backdrop-blur-lg rounded-2xl border border-[#e0d0bc]/80 shadow-2xl"
+                    className="bg-gradient-to-br from-[#f9f5f0]/80 to-[#f0e6d9]/90 backdrop-blur-lg rounded-2xl border border-[#e0d0bc]/80 shadow-2xl w-full"
                     whileHover={isActive ? { 
                       scale: 1.05,
                       boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
@@ -255,13 +249,13 @@ export function TestimonialCarousel() {
                     }}
                   >
                     {/* Image container */}
-                    <div className="relative w-full h-80 overflow-hidden rounded-xl">
+                    <div className="relative w-full pb-[85%] md:pb-[70%] overflow-hidden rounded-xl">
                       <Image 
                         src={testimonial.imageSrc} 
                         alt="Testimonial image" 
                         fill
                         sizes="(max-width: 768px) 100vw, 460px"
-                        className="object-cover object-center"
+                        className="object-contain md:object-cover object-center"
                         priority
                       />
                     </div>
@@ -273,25 +267,27 @@ export function TestimonialCarousel() {
         </div>
       </div>
 
-      {/* Navigation buttons */}
-      <button
-        onClick={handlePrev}
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-8 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 shadow-lg flex items-center justify-center text-foreground hover:bg-white/20 transition-all z-20"
-        aria-label="Previous testimonial"
-      >
-        <ChevronLeft size={24} />
-      </button>
-      
-      <button
-        onClick={handleNext}
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-8 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 shadow-lg flex items-center justify-center text-foreground hover:bg-white/20 transition-all z-20"
-        aria-label="Next testimonial"
-      >
-        <ChevronRight size={24} />
-      </button>
+      {/* Navigation buttons - moved below cards */}
+      <div className="flex items-center justify-center gap-6 mt-6 w-full z-30">
+        <button
+          onClick={handlePrev}
+          className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 shadow-lg flex items-center justify-center text-foreground hover:bg-white/20 transition-all"
+          aria-label="Previous testimonial"
+        >
+          <ChevronLeft size={24} />
+        </button>
+        
+        <button
+          onClick={handleNext}
+          className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 shadow-lg flex items-center justify-center text-foreground hover:bg-white/20 transition-all"
+          aria-label="Next testimonial"
+        >
+          <ChevronRight size={24} />
+        </button>
+      </div>
 
       {/* Dots navigation */}
-      <div className="carousel-dots">
+      <div className="carousel-dots mt-2">
         {testimonials.map((_, index) => {
           const position = getItemPosition(index);
           const isActive = Math.abs(position.z) < 100;
@@ -306,13 +302,7 @@ export function TestimonialCarousel() {
         })}
       </div>
       
-      <button 
-        onClick={handleNext}
-        className="carousel-nav-button carousel-nav-next hidden md:flex"
-        aria-label="Next testimonial"
-      >
-        <ChevronRight className="w-5 h-5 text-white" />
-      </button>
+      {/* Removed duplicate buttons */}
     </div>
   );
 }

@@ -493,6 +493,172 @@ const Dashboard = () => {
         </motion.div>
       </div>
 
+      {/* Devotion Experience Tracking */}
+      <motion.div variants={itemVariants} className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Wellness Journey</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Fitness Card */}
+          <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl p-6 border border-emerald-100/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-100/30 rounded-full -translate-y-1/3 translate-x-1/3 group-hover:bg-emerald-100/50 transition-all duration-300"></div>
+            
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-800 mb-1">Fitness</h3>
+                <p className="text-gray-600 text-sm mb-3">Track your strength, cardio, and flexibility progress</p>
+                
+                {/* Fitness Stats */}
+                <div className="mb-4 flex justify-between gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-emerald-600">12</div>
+                    <div className="text-xs text-emerald-700/70">Workouts</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-emerald-600">68%</div>
+                    <div className="text-xs text-emerald-700/70">Completion</div>
+                  </div>
+                </div>
+                
+                {/* Main Progress Bar */}
+                <div className="mb-5">
+                  <div className="flex justify-between text-xs text-emerald-800 mb-1">
+                    <span>Overall Progress</span>
+                    <span>72%</span>
+                  </div>
+                  <div className="h-2 bg-emerald-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full" style={{ width: '72%' }}></div>
+                  </div>
+                </div>
+                
+                <div className="mt-3">
+                  <Link 
+                    href="/account/dashboard/devotion/fitness/strength-fundamentals"
+                    className="text-sm text-emerald-700 hover:text-emerald-800 flex items-center gap-2 mb-1.5 group-hover:translate-x-1 transition-transform"
+                  >
+                    <span>Strength Fundamentals</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Nutrition Card */}
+          <div className="bg-gradient-to-br from-amber-50 to-white rounded-xl p-6 border border-amber-100/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-amber-100/30 rounded-full -translate-y-1/3 translate-x-1/3 group-hover:bg-amber-100/50 transition-all duration-300"></div>
+            
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3v18h18" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 17V9" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17V5" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 17v-3" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-800 mb-1">Nutrition</h3>
+                <p className="text-gray-600 text-sm mb-3">Explore meal plans and track your dietary progress</p>
+                
+                {/* Nutrition Stats */}
+                <div className="mb-4 flex justify-between gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-amber-600">9</div>
+                    <div className="text-xs text-amber-700/70">Meal Plans</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-amber-600">54%</div>
+                    <div className="text-xs text-amber-700/70">Adherence</div>
+                  </div>
+                </div>
+                
+                {/* Main Progress Bar */}
+                <div className="mb-5">
+                  <div className="flex justify-between text-xs text-amber-800 mb-1">
+                    <span>Weekly Completion</span>
+                    <span>5/7</span>
+                  </div>
+                  <div className="h-2 bg-amber-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full" style={{ width: '71%' }}></div>
+                  </div>
+                </div>
+                
+                <div className="mt-3">
+                  <Link 
+                    href="/account/dashboard/devotion/meals/clean-eating"
+                    className="text-sm text-amber-700 hover:text-amber-800 flex items-center gap-2 mb-1.5 group-hover:translate-x-1 transition-transform"
+                  >
+                    <span>Clean Eating Plan</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mind Card */}
+          <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-6 border border-indigo-100/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-100/30 rounded-full -translate-y-1/3 translate-x-1/3 group-hover:bg-indigo-100/50 transition-all duration-300"></div>
+            
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-800 mb-1">Mind</h3>
+                <p className="text-gray-600 text-sm mb-3">Mindfulness practices and mental wellness tracking</p>
+                
+                {/* Mind Stats */}
+                <div className="mb-4 flex justify-between gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-indigo-600">15</div>
+                    <div className="text-xs text-indigo-700/70">Sessions</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-indigo-600">78%</div>
+                    <div className="text-xs text-indigo-700/70">Consistency</div>
+                  </div>
+                </div>
+                
+                {/* Main Progress Bar */}
+                <div className="mb-5">
+                  <div className="flex justify-between text-xs text-indigo-800 mb-1">
+                    <span>Focus Minutes</span>
+                    <span>82/120</span>
+                  </div>
+                  <div className="h-2 bg-indigo-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full" style={{ width: '68%' }}></div>
+                  </div>
+                </div>
+                
+                <div className="mt-3">
+                  <Link 
+                    href="/account/dashboard/devotion/coaching/mindful-mornings"
+                    className="text-sm text-indigo-700 hover:text-indigo-800 flex items-center gap-2 mb-1.5 group-hover:translate-x-1 transition-transform"
+                  >
+                    <span>Mindful Mornings</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Recent Activity */}
       <motion.div variants={itemVariants} className="mb-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Activity</h2>

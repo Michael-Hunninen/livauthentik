@@ -1,0 +1,26 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  # Next.js configuration
+  NEXT_USE_NETLIFY_EDGE = "true"
+  NEXT_TELEMETRY_DISABLED = "1"
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
+
+# Next.js plugin with static 404 page support
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+  [plugins.inputs]
+    enableStatic404 = true
+    functions = "functions"
+
+# Client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/_not-found"
+  status = 404
+
+# Required for Next.js API routes
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"

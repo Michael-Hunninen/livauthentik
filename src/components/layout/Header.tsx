@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, ReactPortal } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import CartButton from '../cart/CartButton';
 
 export default function Header() {
@@ -17,6 +18,49 @@ export default function Header() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+  
+  // Inline styles to force mobile menu to have consistent behavior
+  // Mobile menu constant styles to ensure they're not affected by scroll state
+  const mobileMenuOverlayStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    zIndex: 9998 // Very high z-index to ensure it's above everything
+  } as React.CSSProperties;
+  
+  const mobileMenuPanelStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    height: '100vh',
+    width: '85%',
+    maxWidth: '24rem',
+    backgroundColor: 'white',
+    color: '#0f172a', // dark color
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    zIndex: 9999, // Higher than overlay
+    overflowY: 'scroll',
+    transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(100%)',
+    visibility: isMobileMenuOpen ? 'visible' : 'hidden',
+    transition: 'all 0.3s ease-out'
+  };
+  
+  // Create a portal component for the mobile menu
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
+  
 
   // Toggle between shop and dashboard views
   const toggleView = () => {
@@ -295,7 +339,7 @@ export default function Header() {
           {/* Right Section with Cart and Account */}
           <div className="flex items-center space-x-4">
             {isLoggedIn ? (
-              <div className="relative">
+              <div className="relative hidden md:block">
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
@@ -391,247 +435,399 @@ export default function Header() {
                 </AnimatePresence>
               </div>
             ) : (
-              <Link 
-                href="/account" 
-                className={`hidden md:flex items-center justify-center w-8 h-8 transition-colors duration-300 rounded-full hover:bg-accent/10 ${isScrolled || !isTransparentHeaderPage ? 'text-foreground hover:text-accent' : 'text-[#fffff0] hover:text-accent'}`}
-                aria-label="Sign In"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </Link>
+              <>
+                {/* Profile link - Desktop only */}
+                <Link 
+                  href="/account" 
+                  className="hidden md:flex items-center justify-center w-8 h-8 transition-colors duration-300 rounded-full hover:bg-accent/10 text-foreground hover:text-accent"
+                  aria-label="Sign In"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </Link>
+                
+                {/* Cart Button - Desktop - Only show when not in account section */}
+                {!pathname?.startsWith('/account') && <CartButton />}
+              </>
             )}
-            <CartButton />
-
-            {/* Mobile Menu Button */}
-            <div className="md:hidden">
+            {/* Mobile Menu Button and Cart */}
+            <div className="flex items-center gap-2 md:hidden">
+              {/* Cart Button - Only show when not in account section */}
+              {!pathname?.startsWith('/account') && <CartButton />}
+              
+              {/* Mobile Menu Toggle */}
               <button
                 type="button"
-                className="text-foreground hover:text-accent p-2 transition-colors duration-300"
+                className={`${isMobileMenuOpen ? 'text-foreground' : (isScrolled || !isTransparentHeaderPage ? 'text-foreground' : 'text-[#fffff0]')} hover:text-accent p-2 transition-all duration-300 relative z-50`}
                 onClick={toggleMobileMenu}
                 aria-expanded={isMobileMenuOpen}
               >
                 <span className="sr-only">Open main menu</span>
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"}
+                <div className="w-6 h-5 flex flex-col justify-between items-center">
+                  <span 
+                    className={`bg-current block h-0.5 w-6 rounded-sm transition-all duration-300 ease-out ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`} 
                   />
-                </svg>
+                  <span 
+                    className={`bg-current block h-0.5 w-6 rounded-sm transition-all duration-300 ease-out ${isMobileMenuOpen ? 'opacity-0' : 'opacity-100'}`} 
+                  />
+                  <span 
+                    className={`bg-current block h-0.5 w-6 rounded-sm transition-all duration-300 ease-out ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`} 
+                  />
+                </div>
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Mobile Menu */}
-      <div 
-        className={`md:hidden absolute w-full left-0 transform transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0 pointer-events-none'}`}
-      >
-        <div className="px-6 py-5 space-y-3 bg-background/95 backdrop-blur-xl border-t border-b border-border/20 shadow-lg">
+      {/* Mobile Menu Overlay with consistent backdrop blur */}
+      {isMounted && isMobileMenuOpen && createPortal(
+        <div 
+          style={{
+            ...mobileMenuOverlayStyle, 
+            opacity: 1,
+            visibility: 'visible',
+            pointerEvents: 'auto',
+            transition: 'opacity 0.3s, visibility 0.3s'
+          }}
+          onClick={() => setIsMobileMenuOpen(false)}
+        />,
+        document.body
+      )}
+      
+      {/* Mobile Menu Panel with forced dark text */}
+      {isMounted && createPortal(
+        <div style={mobileMenuPanelStyle}>
+          <div className="px-6 py-16 space-y-6">
           {isLoggedIn ? (
             /* Balanced Navigation - Shopping + Account Management */
             <>
-              {/* User Profile Summary */}
-              <div className="mb-4 pb-3 border-b border-border/10">
-                <div className="flex items-center px-3 py-2">
-                  <div className="relative w-10 h-10 rounded-full overflow-hidden bg-accent/10 flex items-center justify-center border border-border/20">
-                    <svg className="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {/* Close button and profile section */}
+              <div className="absolute top-5 right-5">
+                <button 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 rounded-full hover:bg-accent/10 transition-colors duration-200"
+                >
+                  <svg className="w-6 h-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              {/* User Profile Card */}
+              <div className="mb-8 pb-6 border-b border-border/10">
+                <div className="flex items-center gap-4">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-accent/30 to-accent/10 flex items-center justify-center border-2 border-accent/20 shadow-lg shadow-accent/5">
+                    <svg className="h-8 w-8 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-foreground">Alex Johnson</p>
-                    <div className="flex items-center">
-                      <svg className="h-3 w-3 text-accent mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div>
+                    <p className="text-lg font-medium text-foreground">Alex Johnson</p>
+                    <div className="flex items-center mt-1 bg-accent/10 rounded-full px-3 py-1">
+                      <svg className="h-3.5 w-3.5 text-accent mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                       </svg>
-                      <span className="text-xs text-accent">750 points</span>
+                      <span className="text-sm font-medium text-accent">750 points</span>
                     </div>
                   </div>
+                </div>
+                
+                {/* Quick account links */}
+                <div className="flex gap-2 mt-5">
+                  <Link 
+                    href="/account/dashboard" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex-1 bg-accent/10 hover:bg-accent/20 text-accent rounded-lg py-2.5 px-4 text-center text-sm font-medium transition-colors duration-200"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link 
+                    href="/account/dashboard/rewards" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex-1 bg-accent/10 hover:bg-accent/20 text-accent rounded-lg py-2.5 px-4 text-center text-sm font-medium transition-colors duration-200"
+                  >
+                    Rewards
+                  </Link>
                 </div>
               </div>
               
               {/* Featured Devotion Experience */}
-              <div className="mb-4 pb-3 border-b border-border/10 bg-gradient-to-r from-accent/5 to-background rounded-md">
-                <h3 className="px-3 text-xs font-semibold text-accent mb-2 uppercase tracking-wider pt-2">Featured Experience</h3>
-                <Link href="/account/dashboard/devotion" 
-                  className="text-foreground hover:text-accent flex items-center justify-between px-3 py-3 text-base font-medium transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <div className="flex items-center">
-                    <svg className="mr-2 h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                    <span className="font-medium">Devotion Experience</span>
-                  </div>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
+              <div className="mb-8">
+                <h3 className="font-medium text-xs uppercase tracking-wider text-muted-foreground mb-4">Devotion Experience</h3>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Fitness */}
+                  <Link 
+                    href="/account/dashboard/devotion/fitness" 
+                    className="relative overflow-hidden rounded-xl bg-[#6366f1]/10 hover:bg-[#6366f1]/15 p-4 transition-all duration-300 group"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="relative z-10">
+                      <div className="w-9 h-9 rounded-lg bg-[#6366f1]/20 flex items-center justify-center mb-3">
+                        <svg className="w-5 h-5 text-[#6366f1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                      </div>
+                      <h4 className="text-sm font-medium text-foreground mb-1">Fitness</h4>
+                      <p className="text-xs text-muted-foreground">3 active plans</p>
+                    </div>
+                  </Link>
+                  
+                  {/* Nutrition */}
+                  <Link 
+                    href="/account/dashboard/devotion/meals" 
+                    className="relative overflow-hidden rounded-xl bg-[#22c55e]/10 hover:bg-[#22c55e]/15 p-4 transition-all duration-300 group"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="relative z-10">
+                      <div className="w-9 h-9 rounded-lg bg-[#22c55e]/20 flex items-center justify-center mb-3">
+                        <svg className="w-5 h-5 text-[#22c55e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                      </div>
+                      <h4 className="text-sm font-medium text-foreground mb-1">Nutrition</h4>
+                      <p className="text-xs text-muted-foreground">5 meal plans</p>
+                    </div>
+                  </Link>
+                  
+                  {/* Mind */}
+                  <Link 
+                    href="/account/dashboard/devotion/coaching/mindful-mornings" 
+                    className="relative overflow-hidden rounded-xl bg-[#8b5cf6]/10 hover:bg-[#8b5cf6]/15 p-4 transition-all duration-300 group"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="relative z-10">
+                      <div className="w-9 h-9 rounded-lg bg-[#8b5cf6]/20 flex items-center justify-center mb-3">
+                        <svg className="w-5 h-5 text-[#8b5cf6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M18 12H6" />
+                        </svg>
+                      </div>
+                      <h4 className="text-sm font-medium text-foreground mb-1">Mindfulness</h4>
+                      <p className="text-xs text-muted-foreground">Daily sessions</p>
+                    </div>
+                  </Link>
+                  
+                  {/* View All */}
+                  <Link 
+                    href="/account/dashboard/devotion" 
+                    className="relative overflow-hidden rounded-xl bg-background border border-border/30 hover:border-accent/30 hover:bg-accent/5 p-4 transition-all duration-300 flex flex-col items-center justify-center"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center justify-center mb-1">
+                      <span className="text-sm font-medium text-accent">View All</span>
+                    </div>
+                    <div className="text-accent">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </div>
+                  </Link>
+                </div>
               </div>
 
               {/* Navigation Links */}
-              <div className="mb-4 pb-3 border-b border-border/10">
-                <h3 className="px-3 text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Navigation</h3>
+              <div className="mb-6">
+                <h3 className="font-medium text-xs uppercase tracking-wider text-muted-foreground mb-4">Navigation</h3>
                 
-                {/* Home Link */}
-                <Link 
-                  href="/" 
-                  className="text-foreground hover:text-accent flex items-center justify-between px-3 py-3 text-base font-medium transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <div className="flex items-center">
-                    <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    Home
-                  </div>
-                </Link>
-                
-                {/* Shop Dropdown */}
-                <div className="mb-1">
-                  <div className="text-foreground flex items-center justify-between px-3 py-3 text-base font-medium">
-                    <div className="flex items-center">
-                      <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {/* Main navigation grid layout */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {/* Home Link */}
+                  <Link 
+                    href="/" 
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-background to-accent/5 border border-border/10 hover:border-accent/20 hover:bg-accent/5 transition-all duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center mb-2">
+                      <svg className="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium">Home</span>
+                  </Link>
+                  
+                  {/* Shop Link */}
+                  <Link 
+                    href="/shop" 
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-background to-amber-500/5 border border-border/10 hover:border-amber-500/20 hover:bg-amber-500/5 transition-all duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center mb-2">
+                      <svg className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
-                      Shop
                     </div>
-                  </div>
-                  <div className="pl-8">
-                    <Link 
-                      href="/products" 
-                      className="text-foreground hover:text-accent flex items-center justify-between px-3 py-2 text-sm font-medium transition-colors"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <div className="flex items-center">
-                        <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                        </svg>
-                        Products
-                      </div>
-                    </Link>
-                    <Link 
-                      href="/programs" 
-                      className="text-foreground hover:text-accent flex items-center justify-between px-3 py-2 text-sm font-medium transition-colors"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <div className="flex items-center">
-                        <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                        Programs
-                      </div>
-                    </Link>
-                  </div>
+                    <span className="text-sm font-medium">Shop</span>
+                  </Link>
+                  
+                  {/* Products Link */}
+                  <Link 
+                    href="/products" 
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-background to-amber-600/5 border border-border/10 hover:border-amber-600/20 hover:bg-amber-600/5 transition-all duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-amber-600/10 flex items-center justify-center mb-2">
+                      <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium">Products</span>
+                  </Link>
+                  
+                  {/* Programs Link */}
+                  <Link 
+                    href="/programs" 
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-background to-amber-700/5 border border-border/10 hover:border-amber-700/20 hover:bg-amber-700/5 transition-all duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-amber-700/10 flex items-center justify-center mb-2">
+                      <svg className="h-5 w-5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium">Programs</span>
+                  </Link>
                 </div>
 
-                {/* About Link */}
-                <Link 
-                  href="/about" 
-                  className="text-foreground hover:text-accent flex items-center justify-between px-3 py-3 text-base font-medium transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <div className="flex items-center">
-                    <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    About
-                  </div>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
+                {/* Secondary navigation grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* About Link */}
+                  <Link 
+                    href="/about" 
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-background to-blue-500/5 border border-border/10 hover:border-blue-500/20 hover:bg-blue-500/5 transition-all duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mb-2">
+                      <svg className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium">About</span>
+                  </Link>
 
-                {/* Rewards Link */}
-                <Link 
-                  href="/rewards" 
-                  className="text-foreground hover:text-accent flex items-center justify-between px-3 py-3 text-base font-medium transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <div className="flex items-center">
-                    <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                    </svg>
-                    Rewards
-                  </div>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
+                  {/* Rewards Link */}
+                  <Link 
+                    href="/rewards" 
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-background to-amber-400/5 border border-border/10 hover:border-amber-400/20 hover:bg-amber-400/5 transition-all duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-amber-400/10 flex items-center justify-center mb-2">
+                      <svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium">Rewards</span>
+                  </Link>
 
-                {/* Blog Link */}
-                <Link 
-                  href="/blog" 
-                  className="text-foreground hover:text-accent flex items-center justify-between px-3 py-3 text-base font-medium transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <div className="flex items-center">
-                    <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                    </svg>
-                    Blog
-                  </div>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
+                  {/* Blog Link */}
+                  <Link 
+                    href="/blog" 
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-background to-purple-500/5 border border-border/10 hover:border-purple-500/20 hover:bg-purple-500/5 transition-all duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center mb-2">
+                      <svg className="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium">Blog</span>
+                  </Link>
+                  
+                  {/* Contact Link */}
+                  <Link 
+                    href="/contact" 
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-background to-emerald-500/5 border border-border/10 hover:border-emerald-500/20 hover:bg-emerald-500/5 transition-all duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center mb-2">
+                      <svg className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium">Contact</span>
+                  </Link>
+                </div>
               </div>
               
               {/* Account Section */}
-              <div>
-                <h3 className="px-3 text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">My Account</h3>
-                <Link href="/account/dashboard" 
-                  className="text-foreground hover:text-accent flex items-center justify-between px-3 py-3 text-base font-medium transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
+              <div className="mt-8 mb-6">
+                <h3 className="font-medium text-xs uppercase tracking-wider text-muted-foreground mb-4">My Account</h3>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Dashboard Link */}
+                  <Link 
+                    href="/account/dashboard" 
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-background to-blue-600/5 border border-border/10 hover:border-blue-600/20 hover:bg-blue-600/5 transition-all duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-blue-600/10 flex items-center justify-center mb-2">
+                      <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium">Dashboard</span>
+                  </Link>
+
+                  {/* Orders Link */}
+                  <Link 
+                    href="/account/dashboard/orders" 
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-background to-indigo-500/5 border border-border/10 hover:border-indigo-500/20 hover:bg-indigo-500/5 transition-all duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center mb-2">
+                      <svg className="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium">Orders</span>
+                  </Link>
+
+                  {/* Rewards Link */}
+                  <Link 
+                    href="/account/dashboard/rewards" 
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-background to-amber-400/5 border border-border/10 hover:border-amber-400/20 hover:bg-amber-400/5 transition-all duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-amber-400/10 flex items-center justify-center mb-2">
+                      <svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium">Rewards</span>
+                  </Link>
+                  
+                  {/* Settings Link */}
+                  <Link 
+                    href="/account/settings" 
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-background to-slate-500/5 border border-border/10 hover:border-slate-500/20 hover:bg-slate-500/5 transition-all duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-slate-500/10 flex items-center justify-center mb-2">
+                      <svg className="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium">Settings</span>
+                  </Link>
+                </div>
+              </div>
+              
+              {/* Premium Styled Logout Button */}
+              <div className="mt-6 px-2">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    // Add logout functionality here
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-gradient-to-r from-red-500/10 to-rose-500/10 border border-rose-500/20 text-rose-600 font-medium hover:bg-rose-500/20 transition-all duration-300"
                 >
-                  <div className="flex items-center">
-                    <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                    </svg>
-                    Dashboard
-                  </div>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5l7 7-7 7" />
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
-                </Link>
-                <Link href="/account/dashboard/orders" 
-                  className="text-foreground hover:text-accent flex items-center justify-between px-3 py-3 text-base font-medium transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <div className="flex items-center">
-                    <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
-                    Orders
-                  </div>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-                <Link href="/account/dashboard/rewards" 
-                  className="text-foreground hover:text-accent flex items-center justify-between px-3 py-3 text-base font-medium transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <div className="flex items-center">
-                    <svg className="mr-2 h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                    </svg>
-                    Rewards
-                  </div>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
+                  Sign Out
+                </button>
               </div>
             </>
           ) : /* Main Site Navigation */ (
@@ -738,7 +934,9 @@ export default function Header() {
             </div>
           )}
         </div>
-      </div>
+      </div>,
+      document.body
+      )}
     </header>
   );
 }
