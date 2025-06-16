@@ -338,32 +338,42 @@ export default function Header() {
 
           {/* Right Section with Cart and Account */}
           <div className="flex items-center space-x-4">
+            {/* Cart Button - Desktop - Show on all pages except account section */}
+            {!pathname?.startsWith('/account') && (
+              <div className="hidden md:block">
+                <CartButton />
+              </div>
+            )}
+            
             {isLoggedIn ? (
               <div className="relative hidden md:block">
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsProfileDropdownOpen(!isProfileDropdownOpen);
-                    setIsShopDropdownOpen(false);
-                  }}
-                  className="flex items-center hover:text-accent transition-all duration-200"
-                  id="account-dropdown"
-                  aria-label="Account menu"
-                  aria-expanded={isProfileDropdownOpen}
-                  aria-haspopup="true"
-                  aria-controls="account-dropdown-menu"
-                >
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-accent/10 transition-all duration-200">
-                    <svg 
-                      className={`h-5 w-5 transition-all duration-200 ${isProfileDropdownOpen ? 'text-accent' : isScrolled || !isTransparentHeaderPage ? 'text-foreground' : 'text-[#fffff0] hover:text-accent'}`} 
-                      fill="none" 
-                      viewBox="0 0 24 24" 
-                      stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                </button>
+                <div className="relative group">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsProfileDropdownOpen(!isProfileDropdownOpen);
+                      setIsShopDropdownOpen(false);
+                    }}
+                    className={`flex items-center transition-all duration-200 ${isScrolled || !isTransparentHeaderPage ? 'text-foreground' : 'text-[#fffff0]'}`}
+                    id="account-dropdown"
+                    aria-label="Account menu"
+                    aria-expanded={isProfileDropdownOpen}
+                    aria-haspopup="true"
+                    aria-controls="account-dropdown-menu"
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${isProfileDropdownOpen ? 'bg-accent/10' : 'hover:bg-accent/10'}`}>
+                      <svg 
+                        className={`h-5 w-5 transition-all duration-200 ${isProfileDropdownOpen ? 'text-accent' : 'group-hover:text-accent'}`} 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                  </button>
+                </div>
                 
                 <AnimatePresence>
                   {isProfileDropdownOpen && (
@@ -437,24 +447,36 @@ export default function Header() {
             ) : (
               <>
                 {/* Profile link - Desktop only */}
-                <Link 
-                  href="/account" 
-                  className="hidden md:flex items-center justify-center w-8 h-8 transition-colors duration-300 rounded-full hover:bg-accent/10 text-foreground hover:text-accent"
-                  aria-label="Sign In"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </Link>
+                <div className="relative group">
+                  <Link 
+                    href="/account" 
+                    className={`hidden md:flex items-center justify-center w-8 h-8 transition-all duration-200 rounded-full ${isScrolled || !isTransparentHeaderPage ? 'text-foreground' : 'text-[#fffff0]'} group-hover:bg-accent/10`}
+                    aria-label="Sign In"
+                  >
+                    <svg 
+                      className="h-5 w-5 transition-all duration-200 group-hover:text-accent" 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </Link>
+                </div>
                 
-                {/* Cart Button - Desktop - Only show when not in account section */}
-                {!pathname?.startsWith('/account') && <CartButton />}
+                {/* Spacer to maintain layout */}
+                <div className="w-10"></div>
               </>
             )}
             {/* Mobile Menu Button and Cart */}
             <div className="flex items-center gap-2 md:hidden">
-              {/* Cart Button - Only show when not in account section */}
-              {!pathname?.startsWith('/account') && <CartButton />}
+              {/* Cart Button - Mobile - Show on all pages except account section */}
+              {!pathname?.startsWith('/account') && (
+                <div className="md:hidden">
+                  <CartButton />
+                </div>
+              )}
               
               {/* Mobile Menu Toggle */}
               <button

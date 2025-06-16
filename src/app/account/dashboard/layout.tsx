@@ -87,7 +87,7 @@ export default function DashboardLayout({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-white/5 backdrop-blur-sm rounded-xl border-2 border-white/10 shadow-lg min-h-[600px] w-full"
+          className="w-full"
         >
           {children}
         </motion.div>

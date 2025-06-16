@@ -9,6 +9,11 @@ const ShopHero: React.FC = () => {
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const [isVideoLoaded, setIsVideoLoaded] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
+  const [videoError, setVideoError] = React.useState(false);
+  
+  // Video source with fallback
+  const videoSrc = 'https://storage.googleapis.com/msgsndr/5aAlQ1qN7UqHLdGzV8gr/media/67c24ea11e6df223a891b42d.mp4';
+  const fallbackImage = '/images/shop-hero-fallback.jpg'; // Add this image to your public folder
 
   // Set isClient to true on mount to avoid hydration issues
   React.useEffect(() => {
@@ -85,13 +90,14 @@ const ShopHero: React.FC = () => {
                 console.error('Video error event:', e);
                 console.log('Video element:', videoRef.current);
                 console.log('Video readyState:', videoRef.current?.readyState);
+                setVideoError(true);
               }}
-              src="https://storage.googleapis.com/msgsndr/5aAlQ1qN7UqHLdGzV8gr/media/67c24ea11e6df223a891b42d.mp4"
+              src={videoSrc}
             >
               Your browser does not support the video tag.
             </video>
             
-            {!isVideoLoaded && (
+            {!isVideoLoaded && !videoError && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
                 <div className="text-white text-center p-6 rounded-lg">
                   <div className="animate-pulse text-lg mb-2">Loading video...</div>
@@ -102,8 +108,21 @@ const ShopHero: React.FC = () => {
               </div>
             )}
             
-            {/* Overlay */}
+{/* Overlay */}
             <div className="absolute inset-0 bg-black/50"></div>
+            
+            {/* Fallback image when video fails to load */}
+            {videoError && (
+              <div 
+                className="absolute inset-0 w-full h-full bg-cover bg-center"
+                style={{
+                  backgroundImage: `url(${fallbackImage})`,
+                  zIndex: 1
+                }}
+              >
+                <div className="absolute inset-0 bg-black/50"></div>
+              </div>
+            )}
           </div>
         )}
       </div>

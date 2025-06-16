@@ -8,6 +8,7 @@ import AboutHero from '@/components/AboutHero';
 import { FeaturedTicker } from '@/components/featured-ticker';
 import StoryAnimator from '@/components/StoryAnimator';
 import dynamic from 'next/dynamic';
+import CollapsibleBio from '@/components/CollapsibleBio';
 
 // Dynamically import TestimonialCarousel with no SSR to avoid window is not defined errors
 const TestimonialCarousel = dynamic(
@@ -57,6 +58,7 @@ const teamMembers = [
     imageSrc: 'https://storage.googleapis.com/msgsndr/5aAlQ1qN7UqHLdGzV8gr/media/68420a90d7ebee3e7b01d7fd.jpeg',
   },
 ];
+
 
 export default function AboutPage() {
   return (
@@ -307,72 +309,91 @@ export default function AboutPage() {
               </h2>
               <div className="h-px w-24 bg-gradient-to-r from-accent/30 to-transparent mx-auto mb-8"></div>
               <p className="text-xl text-[#555] max-w-3xl mx-auto leading-relaxed founders-header">
-                Husband and wife team dedicated to transforming lives through devotion and authenticity.
+                Meet Brandon & Olivia Oshodin - A power couple united in their mission to transform lives through devotion and authenticity.
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto px-4">
-              {teamMembers.map((member, index) => (
-                <div key={index} className="group relative founder-card">
-                  {/* Card Glow Effect */}
-                  <div className="absolute -inset-0.5 bg-gradient-to-br from-amber-500/20 via-amber-400/10 to-amber-600/20 rounded-3xl blur opacity-70 group-hover:opacity-100 transition-all duration-500 -z-10"></div>
-                  
-                  {/* Main Card */}
-                  <div className="h-full flex flex-col rounded-2xl bg-gradient-to-br from-amber-50/90 to-amber-50/70 backdrop-blur-sm border border-amber-100/50 shadow-lg transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-1 overflow-hidden">
-                    {/* Image Section */}
-                    <div className="relative aspect-[4/3] md:aspect-video overflow-hidden flex-shrink-0 border-b border-amber-100/50">
-                      <div className="absolute inset-0 z-10 overflow-hidden">
-                        <div className="absolute inset-0 border-4 border-white/5 m-1 rounded-xl z-20 opacity-60 transition-transform duration-700 group-hover:scale-105"></div>
-                      </div>
-                      {member.imageSrc ? (
-                        <Image
-                          src={member.imageSrc}
-                          alt={member.name}
-                          fill
-                          className="object-cover transition-transform duration-700 group-hover:scale-105"
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-100/50 to-amber-50/30">
-                          <span className="text-amber-800/30 font-serif font-medium text-5xl">
-                            {member.name.split(' ')[0][0]}
-                            {member.name.split(' ')[1][0]}
-                          </span>
+            <div className="max-w-5xl mx-auto px-4">
+              <div className="group relative founder-card">
+                {/* Card Glow Effect */}
+                <div className="absolute -inset-0.5 bg-gradient-to-br from-amber-500/20 via-amber-400/10 to-amber-600/20 rounded-3xl blur opacity-70 group-hover:opacity-100 transition-all duration-500 -z-10"></div>
+                
+                {/* Main Card */}
+                <div className="relative w-full h-auto overflow-visible">
+                  <div className="relative w-full max-w-7xl mx-auto px-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+                      {/* Left/Brandon's Image */}
+                      <div className="relative h-[350px] md:h-[500px] w-full transform transition-all duration-500 hover:translate-y-[-8px]">
+                        <div className="absolute inset-0 rounded-xl overflow-hidden shadow-2xl">
+                          <div className="absolute inset-0 bg-gradient-to-t from-amber-900/70 via-amber-900/20 to-transparent z-10"></div>
+                          <Image
+                            src={teamMembers[0].imageSrc}
+                            alt={teamMembers[0].name}
+                            fill
+                            className="object-cover transition-all duration-700 ease-out hover:scale-105"
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                          />
                         </div>
-                      )}
+                        <div className="absolute -bottom-4 -right-4 bg-amber-50 border border-amber-100/80 rounded-md px-4 py-2 shadow-lg z-20">
+                          <h3 className="text-lg md:text-xl font-serif font-medium text-amber-900">{teamMembers[0].name}</h3>
+                          <div className="flex items-center">
+                            <div className="h-px w-8 bg-amber-400 mr-2"></div>
+                            <p className="text-xs font-medium text-amber-700/70">{teamMembers[0].role}</p>
+                          </div>
+                        </div>
+                      </div>
                       
-                      {/* Name and Role Overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
-                        <h3 className="text-2xl font-serif font-normal text-amber-50 drop-shadow-md">{member.name}</h3>
-                        <div className="flex items-center mt-1">
-                          <div className="h-px w-8 bg-amber-400 mr-2"></div>
-                          <p className="text-sm font-medium text-amber-200/90">{member.role}</p>
+                      {/* Right/Olivia's Image */}
+                      <div className="relative h-[350px] md:h-[500px] w-full transform transition-all duration-500 hover:translate-y-[-8px]">
+                        <div className="absolute inset-0 rounded-xl overflow-hidden shadow-2xl">
+                          <div className="absolute inset-0 bg-gradient-to-t from-amber-900/70 via-amber-900/20 to-transparent z-10"></div>
+                          <Image
+                            src={teamMembers[1].imageSrc}
+                            alt={teamMembers[1].name}
+                            fill
+                            className="object-cover transition-all duration-700 ease-out hover:scale-105"
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                          />
+                        </div>
+                        <div className="absolute -bottom-4 -left-4 bg-amber-50 border border-amber-100/80 rounded-md px-4 py-2 shadow-lg z-20">
+                          <h3 className="text-lg md:text-xl font-serif font-medium text-amber-900">{teamMembers[1].name}</h3>
+                          <div className="flex items-center">
+                            <div className="h-px w-8 bg-amber-400 mr-2"></div>
+                            <p className="text-xs font-medium text-amber-700/70">{teamMembers[1].role}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
                     
-                    {/* Bio Section */}
-                    <div className="flex flex-col flex-grow p-8 bg-gradient-to-br from-amber-50/90 to-amber-50/70">
-                      <div className="h-px w-16 bg-gradient-to-r from-amber-400/80 to-transparent mb-6"></div>
-                      <p className="text-amber-900/90 leading-relaxed font-light text-[15.5px] tracking-wide flex-grow">
-                        {member.bio}
-                      </p>
-                      
-                      {/* Decorative Elements */}
-                      <div className="flex items-center justify-between mt-8 pt-6 border-t border-amber-100">
-                        <div className="flex space-x-2">
-                          {Array(3).fill(0).map((_, i) => (
-                            <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-200/60"></div>
-                          ))}
+                    {/* Combined Bio Section */}
+                    <div className="w-full mt-16 px-4 md:px-8 py-12 bg-gradient-to-br from-amber-50/80 to-amber-50/30 rounded-2xl border border-amber-100/50 shadow-inner">
+                      <div className="w-full max-w-6xl mx-auto">
+                        <div className="prose prose-amber max-w-none">
+                          <p className="text-amber-900/90 leading-relaxed text-lg font-light">
+                            Brandon and Olivia Oshodin are highly respected experts in self-mastery and leadership. Together, they are passionate about collaborating with conscious leaders, coaches, and entrepreneurs who understand that mastering their inner world is the next vital step for their personal and business growth. They specialize in designing tailored well-being strategies that cultivate a culture of growth, resilience, and innovation, empowering their clients to achieve transformative results.
+                          </p>
                         </div>
-                        <div className="text-amber-800/40 text-xs font-medium tracking-wider">
-                          LIV AUTHENTIK
+
+                        <div className="w-full">
+                          <CollapsibleBio />
                         </div>
+                      </div>
+                    </div>
+                    
+                    {/* Decorative Elements */}
+                    <div className="flex items-center justify-between mt-12 pt-6 border-t border-amber-100">
+                      <div className="flex space-x-2">
+                        {Array(3).fill(0).map((_, i) => (
+                          <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-200/60"></div>
+                        ))}
+                      </div>
+                      <div className="text-amber-800/40 text-xs font-medium tracking-wider">
+                        LIV AUTHENTIK
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </section>

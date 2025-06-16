@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import Image from 'next/image';
+import ActivityTrendsChart from '@/components/dashboard/ActivityTrendsChart';
 
 // Types
 interface UserProfile {
@@ -21,6 +22,7 @@ interface RewardInfo {
   nextLevel: string;
   pointsToNextLevel: number;
   tier: string;
+  progressPercentage?: number;
 }
 
 interface Order {
@@ -280,7 +282,9 @@ const Dashboard = () => {
           nextLevel: rewardsData.nextLevel || 'Silver',
           pointsToNextLevel: typeof rewardsData.pointsToNextLevel === 'number' ? 
             rewardsData.pointsToNextLevel : 500,
-          tier: rewardsData.tier || rewardsData.level || 'Bronze'
+          tier: rewardsData.tier || rewardsData.level || 'Bronze',
+          progressPercentage: typeof rewardsData.progressPercentage === 'number' ? 
+            rewardsData.progressPercentage : 0
         });
         
         // Update user's rewards points if we have a user object
@@ -344,47 +348,56 @@ const Dashboard = () => {
       {/* Welcome Section */}
       <motion.div 
         variants={itemVariants}
-        className="mb-8 bg-gradient-to-r from-amber-50 to-amber-100/50 p-6 rounded-2xl border border-amber-100/50 relative overflow-hidden"
+        className="mb-8 p-[1px] rounded-2xl relative"
+        style={{
+          background: 'linear-gradient(135deg, rgba(202, 172, 142, 0.3), rgba(202, 172, 142, 0.1))',
+        }}
       >
-        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-amber-200/20 to-amber-300/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-xl"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-amber-200/20 to-amber-300/10 rounded-full translate-y-1/2 -translate-x-1/3 blur-xl"></div>
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-black/10 to-transparent opacity-15 -z-10"></div>
+        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-[#fffff0]/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 blur-xl -z-10"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#fffff0]/10 to-transparent rounded-full translate-y-1/2 -translate-x-1/3 blur-xl -z-10"></div>
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-r from-amber-300 to-amber-400 flex items-center justify-center text-white text-xl font-bold shadow-sm">
-                {loading.user ? '?' : user?.name?.charAt(0) || '?'}
-              </div>
+        <div className="bg-gradient-to-br from-[#2f2828] via-[#613226] to-[#b37654] rounded-2xl p-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-transparent opacity-15"></div>
+          <div className="relative z-10">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-amber-950">
-                  Welcome back, <span className="text-amber-600">{loading.user ? 'Member' : (user?.name?.split(' ')[0] || 'Member')}</span>
-                </h1>
-                <p className="text-amber-800/70">{user?.email || 'Loading...'}</p>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#fffff0] to-[#caac8e] flex items-center justify-center text-gray-800 text-xl font-medium shadow-sm">
+                    {loading.user ? '?' : user?.name?.charAt(0) || '?'}
+                  </div>
+                  <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-[#fffff0]">
+                      Welcome back, <span className="text-[#caac8e]">{loading.user ? 'Member' : (user?.name?.split(' ')[0] || 'Member')}</span>
+                    </h1>
+                    <p className="text-[#fffff0]/90">{user?.email || 'Loading...'}</p>
+                  </div>
+                </div>
+                <p className="text-[#fffff0]/80 mt-2 max-w-2xl">
+                  Here's an overview of your account activity, orders, and rewards.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Link 
+                  href="/products"
+                  className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-devotionBrown/90 to-devotionBrown text-white hover:from-devotionBrown hover:to-devotionBrown/90 transition-all shadow-sm text-sm font-medium flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Shop Now
+                </Link>
+                <Link 
+                  href="/account/dashboard/rewards"
+                  className="px-4 py-2.5 rounded-lg bg-white/80 border border-devotionBrown/30 hover:bg-white transition-colors shadow-sm text-sm font-medium flex items-center gap-2 text-devotionBrown"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                  </svg>
+                  View Rewards
+                </Link>
               </div>
             </div>
-            <p className="text-amber-800/80 mt-2 max-w-2xl">
-              Here's an overview of your account activity, orders, and rewards.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Link 
-              href="/products"
-              className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:from-amber-700 hover:to-amber-800 transition-all shadow-sm text-sm font-medium flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Shop Now
-            </Link>
-            <Link 
-              href="/account/dashboard/rewards"
-              className="px-4 py-2.5 rounded-lg bg-white/80 border border-amber-200 hover:bg-white transition-colors shadow-sm text-sm font-medium flex items-center gap-2 text-amber-700"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-              </svg>
-              View Rewards
-            </Link>
           </div>
         </div>
       </motion.div>
@@ -394,42 +407,89 @@ const Dashboard = () => {
         {/* Points Card */}
         <motion.div 
           variants={itemVariants}
-          className="col-span-1 bg-gradient-to-br from-white to-amber-50/30 rounded-xl p-6 border border-amber-100/30 relative overflow-hidden shadow-sm"
+          className="col-span-1 bg-gradient-to-br from-white to-devotionBrown/5 rounded-xl p-6 border border-devotionBrown/10 relative overflow-hidden shadow-sm"
         >
-          <h3 className="text-lg font-medium text-amber-900 mb-1">Your Points</h3>
+          <h3 className="text-lg font-medium text-gray-800 mb-1">Your Points</h3>
           
           {loading.rewards && (
             <div className="animate-pulse flex flex-col">
-              <div className="h-8 w-24 bg-amber-100/50 rounded mb-2"></div>
-              <div className="h-4 w-16 bg-amber-50/80 rounded"></div>
+              <div className="h-8 w-24 bg-devotionBrown/20 rounded mb-2"></div>
+              <div className="h-4 w-16 bg-devotionBrown/10 rounded"></div>
             </div>
           )}
           
           {!loading.rewards && rewardsInfo && (
             <div className="mt-2">
-              <div className="text-3xl font-bold text-amber-600 mb-1">{rewardsInfo.points.toLocaleString()}</div>
-              <div className="text-sm text-amber-800/70">{rewardsInfo.level} Level</div>
-              <div className="mt-3 bg-amber-50/50 h-2 rounded-full w-full overflow-hidden">
+              <div className="text-3xl font-bold text-devotionBrown mb-1">{rewardsInfo.points.toLocaleString()}</div>
+              <div className="text-sm text-gray-600">{rewardsInfo.level} Level</div>
+              <div className="mt-3 bg-devotionBrown/10 h-2 rounded-full w-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
-                  style={{ width: `${Math.min(100, (rewardsInfo.points / (rewardsInfo.points + rewardsInfo.pointsToNextLevel)) * 100)}%` }}
+                  className="h-full bg-gradient-to-r from-devotionBrown/80 to-devotionBrown rounded-full"
+                  style={{ width: `${rewardsInfo.progressPercentage !== undefined ? rewardsInfo.progressPercentage : 0}%` }}
                 ></div>
               </div>
-              <div className="mt-1 flex justify-between text-xs text-amber-700/70">
+              <div className="mt-1 flex justify-between text-xs text-gray-600 mb-4">
                 <span>{rewardsInfo.level}</span>
                 <span>{rewardsInfo.pointsToNextLevel} points to {rewardsInfo.nextLevel}</span>
+              </div>
+              
+              {/* Rewards Section */}
+              <div className="border-t border-devotionBrown/20 pt-4">
+                <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center">
+                  <svg className="w-4 h-4 mr-1.5 text-devotionBrown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                  </svg>
+                  Next Reward
+                </h4>
+                
+                <div className="relative overflow-hidden rounded-xl p-0.5 bg-gradient-to-r from-devotionBrown/30 via-devotionBrown/10 to-devotionBrown/30">
+                  <div className="bg-white/95 backdrop-blur-sm p-4 rounded-xl">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 pr-4">
+                        <h3 className="text-lg font-medium text-gray-900 mb-1">Free Shipping</h3>
+                        <p className="text-sm text-gray-600">On your next order</p>
+                        <div className="mt-3">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-devotionBrown/10 text-devotionBrown">
+                            {5000 - rewardsInfo.points} pts to unlock
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-devotionBrown/5 to-devotionBrown/20 flex items-center justify-center">
+                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-devotionBrown/20 to-devotionBrown/30 flex items-center justify-center">
+                            <svg className="w-8 h-8 text-devotionBrown" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 text-center">
+                  <Link 
+                    href="/account/dashboard/rewards" 
+                    className="inline-flex items-center text-sm font-medium text-devotionBrown hover:text-devotionBrown/80 transition-colors"
+                  >
+                    View all rewards
+                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
               </div>
             </div>
           )}
           
           {!loading.rewards && error.rewards && (
             <div className="flex flex-col items-center py-4">
-              <div className="text-amber-800/80 mb-2 text-center">
+              <div className="text-gray-600 mb-2 text-center">
                 Failed to load points
               </div>
               <button
                 onClick={() => fetchRewards(false)}
-                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm font-medium rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-300 shadow-sm"
+                className="px-4 py-2 bg-gradient-to-r from-devotionBrown/80 to-devotionBrown text-white text-sm font-medium rounded-lg hover:from-devotionBrown hover:to-devotionBrown/90 transition-all duration-300 shadow-sm"
               >
                 Try Again
               </button>
@@ -437,73 +497,28 @@ const Dashboard = () => {
           )}
         </motion.div>
         
-        {/* Quick Actions */}
+        {/* Activity Trends Chart */}
         <motion.div 
           variants={itemVariants}
-          className="col-span-1 lg:col-span-2 bg-white rounded-xl p-6 border border-gray-100 shadow-sm"
+          className="col-span-1 lg:col-span-2 bg-gradient-to-br from-white to-devotionBrown/5 rounded-xl p-6 border border-devotionBrown/10 shadow-sm relative overflow-hidden flex flex-col"
         >
-          <h3 className="text-lg font-medium text-gray-800 mb-4">Quick Actions</h3>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            <Link 
-              href="/account/dashboard/rewards" 
-              className="flex items-center gap-3 p-3 rounded-lg border border-amber-100 hover:bg-amber-50/50 transition-colors"
-            >
-              <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-medium text-gray-800">View Rewards</p>
-                <p className="text-xs text-gray-500">Check points and benefits</p>
-              </div>
-            </Link>
-            
-            <Link 
-              href="/account/orders" 
-              className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
-            >
-              <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-medium text-gray-800">Order History</p>
-                <p className="text-xs text-gray-500">View past orders</p>
-              </div>
-            </Link>
-            
-            <Link 
-              href="/account/profile" 
-              className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
-            >
-              <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-medium text-gray-800">Profile Settings</p>
-                <p className="text-xs text-gray-500">Update your information</p>
-              </div>
-            </Link>
+          <div className="flex-1 min-h-[300px] h-full">
+            <ActivityTrendsChart className="h-full" />
           </div>
         </motion.div>
       </div>
 
       {/* Devotion Experience Tracking */}
       <motion.div variants={itemVariants} className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Wellness Journey</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Devotion Experience</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Fitness Card */}
-          <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl p-6 border border-emerald-100/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-100/30 rounded-full -translate-y-1/3 translate-x-1/3 group-hover:bg-emerald-100/50 transition-all duration-300"></div>
+          <div className="bg-gradient-to-br from-teal-50 to-white rounded-xl p-6 border border-teal-100/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-teal-100/30 rounded-full -translate-y-1/3 translate-x-1/3 group-hover:bg-teal-100/50 transition-all duration-300"></div>
             
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+              <div className="w-12 h-12 rounded-xl bg-teal-100 flex items-center justify-center text-teal-700">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
                 </svg>
@@ -515,30 +530,30 @@ const Dashboard = () => {
                 {/* Fitness Stats */}
                 <div className="mb-4 flex justify-between gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-emerald-600">12</div>
-                    <div className="text-xs text-emerald-700/70">Workouts</div>
+                    <div className="text-2xl font-bold text-teal-700">12</div>
+                    <div className="text-xs text-teal-800/70">Workouts</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-emerald-600">68%</div>
-                    <div className="text-xs text-emerald-700/70">Completion</div>
+                    <div className="text-2xl font-bold text-teal-700">68%</div>
+                    <div className="text-xs text-teal-800/70">Completion</div>
                   </div>
                 </div>
                 
                 {/* Main Progress Bar */}
                 <div className="mb-5">
-                  <div className="flex justify-between text-xs text-emerald-800 mb-1">
+                  <div className="flex justify-between text-xs text-teal-800 mb-1">
                     <span>Overall Progress</span>
                     <span>72%</span>
                   </div>
-                  <div className="h-2 bg-emerald-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full" style={{ width: '72%' }}></div>
+                  <div className="h-2 bg-teal-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-teal-500 to-teal-400 rounded-full" style={{ width: '72%' }}></div>
                   </div>
                 </div>
                 
                 <div className="mt-3">
                   <Link 
                     href="/account/dashboard/devotion/fitness/strength-fundamentals"
-                    className="text-sm text-emerald-700 hover:text-emerald-800 flex items-center gap-2 mb-1.5 group-hover:translate-x-1 transition-transform"
+                    className="text-sm text-teal-700 hover:text-teal-800 flex items-center gap-2 mb-1.5 group-hover:translate-x-1 transition-transform"
                   >
                     <span>Strength Fundamentals</span>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -551,11 +566,11 @@ const Dashboard = () => {
           </div>
 
           {/* Nutrition Card */}
-          <div className="bg-gradient-to-br from-amber-50 to-white rounded-xl p-6 border border-amber-100/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+          <div className="bg-gradient-to-br from-amber-50/80 to-white rounded-xl p-6 border border-amber-100/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
             <div className="absolute top-0 right-0 w-20 h-20 bg-amber-100/30 rounded-full -translate-y-1/3 translate-x-1/3 group-hover:bg-amber-100/50 transition-all duration-300"></div>
             
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+              <div className="w-12 h-12 rounded-xl bg-amber-100/80 flex items-center justify-center text-amber-700">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3v18h18" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 17V9" />
@@ -570,32 +585,32 @@ const Dashboard = () => {
                 {/* Nutrition Stats */}
                 <div className="mb-4 flex justify-between gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-amber-600">9</div>
-                    <div className="text-xs text-amber-700/70">Meal Plans</div>
+                    <div className="text-2xl font-bold text-amber-700">9</div>
+                    <div className="text-xs text-amber-800/70">Meals Logged</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-amber-600">54%</div>
-                    <div className="text-xs text-amber-700/70">Adherence</div>
+                    <div className="text-2xl font-bold text-amber-700">86%</div>
+                    <div className="text-xs text-amber-800/70">Daily Goals</div>
                   </div>
                 </div>
                 
                 {/* Main Progress Bar */}
                 <div className="mb-5">
                   <div className="flex justify-between text-xs text-amber-800 mb-1">
-                    <span>Weekly Completion</span>
-                    <span>5/7</span>
+                    <span>Weekly Consistency</span>
+                    <span>86%</span>
                   </div>
                   <div className="h-2 bg-amber-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full" style={{ width: '71%' }}></div>
+                    <div className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full" style={{ width: '86%' }}></div>
                   </div>
                 </div>
                 
                 <div className="mt-3">
                   <Link 
-                    href="/account/dashboard/devotion/meals/clean-eating"
+                    href="/account/dashboard/devotion/nutrition/meal-plans"
                     className="text-sm text-amber-700 hover:text-amber-800 flex items-center gap-2 mb-1.5 group-hover:translate-x-1 transition-transform"
                   >
-                    <span>Clean Eating Plan</span>
+                    <span>View Meal Plans</span>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                     </svg>
@@ -605,49 +620,49 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Mind Card */}
-          <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-6 border border-indigo-100/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-100/30 rounded-full -translate-y-1/3 translate-x-1/3 group-hover:bg-indigo-100/50 transition-all duration-300"></div>
+          {/* Mindfulness Card */}
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border border-gray-100/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gray-100/30 rounded-full -translate-y-1/3 translate-x-1/3 group-hover:bg-gray-100/50 transition-all duration-300"></div>
             
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600">
+              <div className="w-12 h-12 rounded-xl bg-gray-100/80 flex items-center justify-center text-gray-700">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-800 mb-1">Mind</h3>
-                <p className="text-gray-600 text-sm mb-3">Mindfulness practices and mental wellness tracking</p>
+                <h3 className="text-lg font-semibold text-gray-800 mb-1">Mindfulness</h3>
+                <p className="text-gray-600 text-sm mb-3">Meditation, breathing exercises, and stress management</p>
                 
-                {/* Mind Stats */}
+                {/* Mindfulness Stats */}
                 <div className="mb-4 flex justify-between gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-indigo-600">15</div>
-                    <div className="text-xs text-indigo-700/70">Sessions</div>
+                    <div className="text-2xl font-bold text-gray-700">14</div>
+                    <div className="text-xs text-gray-700/70">Sessions</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-indigo-600">78%</div>
-                    <div className="text-xs text-indigo-700/70">Consistency</div>
+                    <div className="text-2xl font-bold text-gray-700">5</div>
+                    <div className="text-xs text-gray-700/70">Day Streak</div>
                   </div>
                 </div>
                 
                 {/* Main Progress Bar */}
                 <div className="mb-5">
-                  <div className="flex justify-between text-xs text-indigo-800 mb-1">
-                    <span>Focus Minutes</span>
-                    <span>82/120</span>
+                  <div className="flex justify-between text-xs text-gray-700 mb-1">
+                    <span>Monthly Goal</span>
+                    <span>47%</span>
                   </div>
-                  <div className="h-2 bg-indigo-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full" style={{ width: '68%' }}></div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-gray-400 to-gray-300 rounded-full" style={{ width: '47%' }}></div>
                   </div>
                 </div>
                 
                 <div className="mt-3">
                   <Link 
-                    href="/account/dashboard/devotion/coaching/mindful-mornings"
-                    className="text-sm text-indigo-700 hover:text-indigo-800 flex items-center gap-2 mb-1.5 group-hover:translate-x-1 transition-transform"
+                    href="/account/dashboard/devotion/mindfulness/meditation"
+                    className="text-sm text-gray-700 hover:text-gray-800 flex items-center gap-2 mb-1.5 group-hover:translate-x-1 transition-transform"
                   >
-                    <span>Mindful Mornings</span>
+                    <span>Start Meditation</span>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                     </svg>

@@ -43,7 +43,7 @@ export default function CartButton() {
 
   return (
     <button
-      className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-accent/10 transition-colors duration-200"
+      className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-accent/10 transition-colors duration-200 group"
       onClick={openCart}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -56,11 +56,12 @@ export default function CartButton() {
           className="relative z-10"
         >
           <svg 
-            className={`h-6 w-6 transition-all duration-200 ${isHovered ? 'text-accent' : isScrolled || !isTransparentHeaderPage ? 'text-foreground' : 'text-[#fffff0]'}`} 
+            className={`h-6 w-6 transition-all duration-200 group-hover:text-accent ${isScrolled || !isTransparentHeaderPage ? 'text-foreground' : 'text-[#fffff0]'}`} 
             fill="none" 
             viewBox="0 0 24 24" 
             strokeWidth="1.5" 
             stroke="currentColor"
+            aria-hidden="true"
           >
             <path 
               strokeLinecap="round" 

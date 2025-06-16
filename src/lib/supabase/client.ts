@@ -4,14 +4,34 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const SUPABASE_URL = 'https://adkrrjokgpufehpxinsr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFka3Jyam9rZ3B1ZmVocHhpbnNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg2NDU2NzcsImV4cCI6MjA2NDIyMTY3N30.9orYHKtsT-YsDRGrIJrj7D5hg825dupR7QwcAYf_1hk';
 
+// Helper to create a new supabase client
+const createClientComponentClient = () => {
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      flowType: 'pkce',
+      storage: {
+        getItem: (key) => {
+          if (typeof window === 'undefined') return null;
+          return localStorage.getItem(key);
+        },
+        setItem: (key, value) => {
+          if (typeof window === 'undefined') return;
+          localStorage.setItem(key, value);
+        },
+        removeItem: (key) => {
+          if (typeof window === 'undefined') return;
+          localStorage.removeItem(key);
+        },
+      },
+    },
+  });
+};
+
 // Initialize Supabase client
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
-});
+const supabase = createClientComponentClient();
 
 export { supabase };
 

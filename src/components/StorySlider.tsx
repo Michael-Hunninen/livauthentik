@@ -158,33 +158,35 @@ const StorySlider: React.FC<StorySliderProps> = ({ cards }) => {
           // Update card opacities smoothly based on scroll position
           cardElements.forEach((card, i) => {
             if (i === currentCardIndex) {
-              // Current card - fade out as we scroll away
+              // Current card - stay fully visible until we're mostly to the next card
+              const opacity = Math.max(0.8, 1 - (progressBetweenCards * 0.8));
               gsap.to(card, {
-                opacity: 1 - progressBetweenCards * 0.6,
-                scale: 1 - progressBetweenCards * 0.1, // Very subtle scale down
-                duration: 0.1,
+                opacity: opacity,
+                scale: 1 - (progressBetweenCards * 0.05), // Very subtle scale down
+                duration: 0.2,
                 ease: "sine.out",
                 overwrite: true
               });
             } else if (i === nextCardIndex) {
-              // Next card - fade in as we approach it
+              // Next card - fade in only when we're close to it
+              const opacity = Math.min(1, progressBetweenCards * 1.5);
               gsap.to(card, {
-                opacity: 0.5 + progressBetweenCards * 0.5,
-                scale: 0.9 + progressBetweenCards * 0.1, // Subtle scale up
-                duration: 0.1,
+                opacity: opacity > 0.4 ? opacity : 0.4,
+                scale: 0.95 + (progressBetweenCards * 0.05), // Subtle scale up
+                duration: 0.2,
                 ease: "sine.out",
                 overwrite: true
               });
             } else {
-              // Other cards - ensure they're in the background
-              if (i < currentCardIndex || i > nextCardIndex) {
-                gsap.to(card, {
-                  opacity: 0.4,
-                  scale: 0.85,
-                  duration: 0.2,
-                  overwrite: true
-                });
-              }
+              // Other cards - keep in background but visible
+              const distance = Math.abs(i - currentPos);
+              const opacity = Math.max(0.4, 0.7 - (distance * 0.15));
+              gsap.to(card, {
+                opacity: opacity,
+                scale: 0.9 - (distance * 0.02),
+                duration: 0.2,
+                overwrite: true
+              });
             }
           });
           

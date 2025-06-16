@@ -9,7 +9,7 @@ export default function Footer() {
   return (
     <footer className="bg-primary text-primary-foreground relative z-30">
       <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
           {/* Brand & Mission */}
           <div className="space-y-4">
             <h3 className="text-xl font-serif font-bold">LivAuthentik</h3>
@@ -92,26 +92,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Newsletter */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Stay Updated</h3>
-            <p className="text-sm text-primary-foreground/80 mb-4">
-              Subscribe to our newsletter for exclusive offers and wellness tips.
-            </p>
-            <form className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="email"
-                placeholder="Your email address"
-                className="bg-white/10 px-4 py-2 rounded-md text-primary-foreground placeholder-primary-foreground/50 border border-transparent focus:border-accent-foreground focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="bg-accent text-accent-foreground px-4 py-2 rounded-md hover:bg-accent/90 transition-colors"
-              >
-                Subscribe
-              </button>
-            </form>
-          </div>
+
         </div>
 
         <div className="border-t border-primary-foreground/20 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">

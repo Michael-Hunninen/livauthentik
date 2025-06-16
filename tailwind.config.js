@@ -21,6 +21,8 @@ module.exports = {
     extend: {
       colors: {
         beige: '#caac8e',
+        brownAccent: '#8c7157',
+        devotionBrown: '#b06a4d', // HSL(18, 43%, 52%) - accent color from Devotion Experience page
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

@@ -52,10 +52,22 @@ function createSupabaseClient(token: string) {
 
 // Helper function to get rewards data
 async function getRewardsData(supabase: any, userId: string) {
-  // Get user's rewards data with tier information
+  // Get all reward tiers from the database to properly calculate tier levels
+  const { data: rewardTiers, error: tiersError } = await supabase
+    .from('reward_tiers')
+    .select('*')
+    .order('min_points', { ascending: true });
+
+  if (tiersError || !rewardTiers || rewardTiers.length === 0) {
+    throw new Error(tiersError?.message || 'No reward tiers found');
+  }
+
+  console.log('Fetched reward tiers:', rewardTiers);
+
+  // Get user's rewards data
   const { data: rewardsData, error: rewardsError } = await supabase
     .from('user_rewards')
-    .select('*, reward_tiers:current_tier_id (name)')
+    .select('*')
     .eq('user_id', userId)
     .single();
 
@@ -63,25 +75,45 @@ async function getRewardsData(supabase: any, userId: string) {
     throw new Error(rewardsError?.message || 'No rewards data found');
   }
 
-  // Get current tier or default to 'Bronze'
-  const currentTier = Array.isArray(rewardsData.reward_tiers) 
-    ? rewardsData.reward_tiers[0]?.name 
-    : rewardsData.reward_tiers?.name || 'Bronze';
-
-  // Determine next tier and points needed
-  let nextTier = 'Gold';
-  let pointsToNextLevel = 2000;
+  // Calculate tier based on points using database values
+  const points = rewardsData.points_balance || 0;
   
-  if (currentTier === 'Bronze') {
-    nextTier = 'Silver';
-    pointsToNextLevel = 1000;
-  } else if (currentTier === 'Silver') {
-    nextTier = 'Gold';
-    pointsToNextLevel = 2000;
-  } else if (currentTier === 'Gold') {
-    nextTier = 'Platinum';
-    pointsToNextLevel = 3000;
+  // Find current tier based on points
+  let currentTierObj = rewardTiers[0]; // Default to first tier (Gold)
+  let nextTierObj = rewardTiers.length > 1 ? rewardTiers[1] : null;
+  
+  for (let i = rewardTiers.length - 1; i >= 0; i--) {
+    if (points >= rewardTiers[i].min_points) {
+      currentTierObj = rewardTiers[i];
+      nextTierObj = i < rewardTiers.length - 1 ? rewardTiers[i + 1] : null;
+      break;
+    }
   }
+  
+  const currentTier = currentTierObj.name;
+  const nextTier = nextTierObj?.name || 'Max';
+  const pointsToNextLevel = nextTierObj ? Math.max(0, nextTierObj.min_points - points) : 0;
+  
+  // Calculate progress percentage between current and next tier
+  let progressPercentage = 0;
+  if (nextTierObj) {
+    const totalPointsInCurrentTier = nextTierObj.min_points - currentTierObj.min_points;
+    const pointsEarnedInCurrentTier = points - currentTierObj.min_points;
+    progressPercentage = Math.min(100, Math.max(0, (pointsEarnedInCurrentTier / totalPointsInCurrentTier) * 100));
+  } else {
+    // At max tier
+    progressPercentage = 100;
+  }
+  
+  // Log tier calculation for debugging
+  console.log('Tier calculation:', {
+    points,
+    currentTier,
+    currentTierMinPoints: currentTierObj.min_points,
+    nextTier,
+    nextTierMinPoints: nextTierObj?.min_points,
+    pointsToNextLevel
+  });
 
   // Run all queries in parallel
   const [
@@ -119,15 +151,15 @@ async function getRewardsData(supabase: any, userId: string) {
     level: currentTier,
     nextLevel: nextTier,
     pointsToNextLevel,
+    progressPercentage,
     lastUpdated: new Date().toISOString(),
     redeemableRewards: redeemableRewards || [],
     redemptionHistory: redemptionHistory || [],
     transactions: transactions || [],
     tierBenefits: {
-      Bronze: ['5% off all purchases', 'Exclusive Bronze member content'],
-      Silver: ['10% off all purchases', 'Free shipping', 'Early access to sales'],
-      Gold: ['15% off all purchases', 'Free shipping', 'Exclusive products', 'Birthday reward'],
-      Platinum: ['20% off all purchases', 'Free express shipping', 'VIP customer support', 'Exclusive events', 'Personal shopper']
+      Gold: ['$90 bag', '1.2x points multiplier', 'Free shipping on orders over $50', 'Exclusive member content'],
+      Platinum: ['$80 bag', '1.5x points multiplier', 'Free shipping', 'Early access to sales', '5% discount on all purchases'],
+      Diamond: ['$72 bag', '2x points multiplier', 'Free shipping', 'Exclusive products', '10% discount on all purchases', 'Birthday reward']
     }
   };
 }
@@ -166,8 +198,7 @@ const MOCK_DATA = {
   tierBenefits: {
     Bronze: ['5% off all purchases', 'Exclusive Bronze member content'],
     Silver: ['10% off all purchases', 'Free shipping', 'Early access to sales'],
-    Gold: ['15% off all purchases', 'Free shipping', 'Exclusive products', 'Birthday reward'],
-    Platinum: ['20% off all purchases', 'Free express shipping', 'VIP customer support', 'Exclusive events', 'Personal shopper']
+    Gold: ['15% off all purchases', 'Free shipping', 'Exclusive products', 'Birthday reward']
   },
   isMockData: true
 };
